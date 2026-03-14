@@ -861,7 +861,7 @@ bool mobact_process_in_vehicle_aggro(struct char_data *ch) {
     for (vict = in_room->people; vict; vict = vict->next_in_room)
       if (vict_is_valid_aggro_target(ch, vict)) {
         // For the newest characters, we potentially give them a small window to react.
-        if (GET_TKE(vict) < NEWBIE_KARMA_THRESHOLD && !IS_PRESTIGE_CH(vict) && number(0, 1)) {
+        if (!IS_PROJECT(vict) && GET_TKE(vict) < NEWBIE_KARMA_THRESHOLD && !IS_PRESTIGE_CH(vict) && number(0, 1)) {
           send_to_char("You suddenly feel like this is a dangerous place to be.\r\n", vict);
         } else {
           break;
@@ -983,7 +983,7 @@ bool mobact_process_aggro(struct char_data *ch, struct room_data *room) {
   for (vict = room->people; vict; vict = vict->next_in_room) {
     if (vict_is_valid_aggro_target(ch, vict)) {
       // For the newest characters, we potentially give them a small window to react.
-      if (GET_TKE(vict) < NEWBIE_KARMA_THRESHOLD && !IS_PRESTIGE_CH(vict) && number(0, 1)) {
+      if (!IS_PROJECT(vict) && GET_TKE(vict) < NEWBIE_KARMA_THRESHOLD && !IS_PRESTIGE_CH(vict) && number(0, 1)) {
         send_to_char("You suddenly feel like this is a dangerous place to be.\r\n", vict);
       } else {
         stop_fighting(ch);

@@ -614,6 +614,7 @@ bool hit_with_multiweapon_toggle(struct char_data *attacker, struct char_data *v
 
     // Calculate effects of armor on the power of the attack.
     if (weap_ammo || att->ranged->magazine) {
+      if (GET_WEAPON_ATTACK_TYPE(att->weapon) == WEAP_TASER) {
         // SR3 p124.
         att->ranged->power = att->ranged->power_before_armor - (int)(def->standard_impact_rating / 2);
       } else {

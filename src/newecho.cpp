@@ -235,23 +235,23 @@ const char *generate_display_string_for_character(struct char_data *actor, struc
   return result_string;
 }
 
-// Finds the first occurrence of standalone word 'str' in string.
+// Finds the first case-sensitive occurrence of standalone word 'str' in string. Behaves like regex \bterm\b
 const char *strstr_isolated(const char *string, const char *search_string) {
   const char *ptr = strstr(string, search_string);
   int search_len = strlen(search_string);
 
-  while (ptr && isalpha(*(ptr + search_len)))
+  while (ptr && (isalpha(*(ptr + search_len)) || (ptr > string && isalpha(*(ptr - 1)))))
     ptr = strstr(ptr + 1, search_string);
 
   return ptr;
 }
 
-// Finds the first occurrence of standalone word 'str' in string (ignores case)
+// Finds the first case-INsensitive occurrence of standalone word 'str' in string. Behaves like regex \bterm\b
 const char *str_str_isolated(const char *string, const char *search_string) {
   const char *ptr = str_str(string, search_string);
   int search_len = strlen(search_string);
 
-  while (ptr && isalpha(*(ptr + search_len)))
+  while (ptr && (isalpha(*(ptr + search_len)) || (ptr > string && isalpha(*(ptr - 1)))))
     ptr = str_str(ptr + 1, search_string);
 
   return ptr;
@@ -329,7 +329,7 @@ void send_echo_to_char(struct char_data *actor, struct char_data *viewer, const 
   bool should_highlight = !PRF_FLAGGED(viewer, PRF_NOHIGHLIGHT) && !PRF_FLAGGED(viewer, PRF_NOCOLOR);
 
   // Scan the string for the actor's name. This is an easy check. In the process, convert echo_string into something mutable, and set i to skip over this new text.
-  bool must_prepend_name = TRUE;
+  bool must_prepend_name = true;
   if (require_char_name) {
     // We're finding all characters up to the first quote mark, and checking those for the name.
     const char *quote_ptr = strchr(echo_string, '"');
@@ -341,49 +341,57 @@ void send_echo_to_char(struct char_data *actor, struct char_data *viewer, const 
       // send_to_char(actor, "Storage string: '%s' (quote_ptr = %c, start_of_block = %c)\r\n", storage_string, *quote_ptr, *start_of_block);
 
       // Check the string for '@self', '@me', '@myself'
-      if (!(must_prepend_name = !(str_str_isolated(storage_string, "@self") || str_str_isolated(storage_string, "@me") || str_str_isolated(storage_string, "@myself")))) {
-        // send_to_char("Found @self/@me/@myself outside of quotes.\r\n", actor);
+      if (str_str_isolated(storage_string, "@self") || str_str_isolated(storage_string, "@me") || str_str_isolated(storage_string, "@myself")) {
+        NEW_EMOTE_DEBUG("^oFound @self/@me/@myself outside of quotes.^n\r\n", actor);
+        must_prepend_name = false;
         break;
       }
 
       // Check the string for the capitalized character's name.
-      if (!(must_prepend_name = !strstr_isolated(storage_string, capitalize(GET_CHAR_NAME(actor))))) {
-        // send_to_char("Found name outside of quotes.\r\n", actor);
+      if (strstr_isolated(storage_string, capitalize(GET_CHAR_NAME(actor)))) {
+        NEW_EMOTE_DEBUG("^oFound name outside of quotes.^n\r\n", actor);
+        must_prepend_name = false;
         break;
       }
 
       // Since we're before a quote (outside of dialogue), we want to advance to the next quote.
       if (!(quote_ptr = strchr(quote_ptr + 1, '"'))) {
-        // send_to_char("No more quotes.\r\n", actor);
+        NEW_EMOTE_DEBUG("^oNo more quotes.^n\r\n", actor);
         break;
       }
 
       // If the next character is a null character, we're at the end of the emote.
-      if (!(start_of_block = quote_ptr + 1)) {
-        // send_to_char("Null character after quote.\r\n", actor);
+      if (!*(quote_ptr + 1)) {
+        NEW_EMOTE_DEBUG("^oNull character after quote.^n\r\n", actor);
         break;
       }
 
       // Finally, advance to the quote at the beginning of the next dialogue, or re-evaluate if there is no more dialogue.
       if (!(quote_ptr = strchr(start_of_block, '"'))) {
-        // send_to_char("Breaking out of while loop, no more quotes.\r\n", actor);
+        NEW_EMOTE_DEBUG("^oBreaking out of while loop, no more quotes.^n\r\n", actor);
         break;
       }
     }
 
-    if (start_of_block && *start_of_block) {
+    if (must_prepend_name && start_of_block && *start_of_block) {
       // send_to_char(actor, "Last attempt. Evaluating '%s'.\r\n", start_of_block);
-      if (!(must_prepend_name = !(str_str_isolated(start_of_block, "@self") || str_str_isolated(start_of_block, "@me") || str_str_isolated(start_of_block, "@myself")))) {
-        // send_to_char("Found @self/me/myself in final analysis.\r\n", actor);
+      if (str_str_isolated(start_of_block, "@self") || str_str_isolated(start_of_block, "@me") || str_str_isolated(start_of_block, "@myself")) {
+        NEW_EMOTE_DEBUG("^oFound @self/me/myself in final analysis.^n\r\n", actor);
+        must_prepend_name = false;
       }
 
       // Check the string for the capitalized character's name.
-      else if (!(must_prepend_name = !strstr_isolated(start_of_block, capitalize(GET_CHAR_NAME(actor))))) {
-        // send_to_char("Found name in final analysis.\r\n", actor);
+      else if (strstr_isolated(start_of_block, capitalize(GET_CHAR_NAME(actor)))) {
+        NEW_EMOTE_DEBUG("^oFound name in final analysis.^n\r\n", actor);
+        must_prepend_name = false;
       }
     }
+
+    if (must_prepend_name) {
+      NEW_EMOTE_DEBUG("^oNo name found in require_char_name mode; will prepend name.^n\r\n", actor);
+    }
   } else {
-    must_prepend_name = FALSE;
+    must_prepend_name = false;
   }
 
   // If we didn't find it, we have to put their name at the beginning.
@@ -1219,7 +1227,7 @@ const char *replace_too_long_words(struct char_data *ch, struct char_data *speak
 struct char_data *find_target_character_for_emote(struct char_data *actor, const char *tag_check_string, bool require_exact_match, struct room_data *in_room, struct veh_data *in_veh) {
   struct remem *mem_record = NULL;
 
-  if (is_abbrev(tag_check_string, "self") || is_abbrev(tag_check_string, "me") || is_abbrev(tag_check_string, "myself"))
+  if (!str_cmp(tag_check_string, "self") || !str_cmp(tag_check_string, "me") || !str_cmp(tag_check_string, "myself"))
     return actor;
 
   // Compare it to bystanders' memorized names. Try for exact matches first.

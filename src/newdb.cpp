@@ -3135,8 +3135,7 @@ void save_worn_equipment_to_db(struct char_data *player) {
 
     // If we've exhausted this wearloc, move on to the next one.
     if (!obj || !obj->next_content)
-      while (i < NUM_WEARS) {
-        i++;
+      while (i++ < NUM_WEARS) {
         if ((obj = GET_EQ(player, i)) && !IS_OBJ_STAT(obj, ITEM_EXTRA_NORENT)) {
           level = 0;
           break;

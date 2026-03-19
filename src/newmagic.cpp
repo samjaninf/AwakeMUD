@@ -386,6 +386,8 @@ void totem_bonus(struct char_data *ch, int action, int type, int &target, int &s
     }
   } else if (action == CONJURING)
   {
+    skill += totem_bonuses[GET_TOTEM(ch)].conjuring_skill_mods[type];
+
     switch (GET_TOTEM(ch)) {
     case TOTEM_LEOPARD:
       if (time_info.hours < 6 || time_info.hours > 19)

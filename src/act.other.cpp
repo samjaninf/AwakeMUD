@@ -4679,6 +4679,33 @@ ACMD(do_spool)
   set_casting_pools(ch, cast, drain, def, reflect, TRUE);
 }
 
+void staff_stop_watching_for_activity(struct descriptor_data *d, bool send_message) {
+  if (!d) {
+    mudlog_vfprintf(NULL, LOG_SYSLOG, "SYSERR: Got NULL desc to staff_stop_watching_for_activity()!");
+    return;
+  }
+
+  if (!d->watching)
+    return;
+
+  struct char_data *vict = (d->watching->original ? d->watching->original : d->watching->character);
+
+  if (vict) {
+    if (send_message && d->character) {
+      send_to_char(d->character, "You will no longer be notified every time %s uses a command that resets their idle timer.\r\n", GET_CHAR_NAME(vict));
+    }
+    mudlog_vfprintf(d->character, LOG_WIZLOG, "No longer watching %s (%ld) for activity.", GET_CHAR_NAME(vict), GET_IDNUM(vict));
+  } else {
+    if (send_message && d->character) {
+      send_to_char(d->character, "Your activity watch has been canceled (no victim name available- target descriptor no longer has a character associated).\r\n");
+    }
+    mudlog_vfprintf(d->character, LOG_WIZLOG, "Stopped watching (target descriptor has no character).");
+  }
+
+  d->watching->watcher = NULL;
+  d->watching = NULL;
+}
+
 ACMD(do_watch)
 {
   if (!ch->in_room) {
@@ -4693,24 +4720,39 @@ ACMD(do_watch)
 
   int dir;
   skip_spaces(&argument);
+
+  // Look for a direction. If none is given, check for a PC victim.
   if ((dir = search_block(argument, lookdirs, FALSE)) == -1 && (dir = search_block(argument, fulllookdirs, FALSE)) == -1) {
-    // Non-staff are bounced here.
+    // Non-staff are bounced here with a syntax hint.
     FAILURE_CASE(!access_level(ch, LVL_EXECUTIVE), "Syntax: WATCH <direction to watch>");
 
-    struct char_data *vict = get_player_vis(ch, argument, FALSE);
-    FAILURE_CASE_PRINTF(!vict, "You don't see anyone named %s in game, and it's not a direction either.", argument);
-    FAILURE_CASE_PRINTF(!vict->desc, "%s has no desc -- nothing to watch.", GET_CHAR_NAME(vict));
+    // Staff syntax hinting for watching connections for activity.
+    FAILURE_CASE_PRINTF(!*argument, "Syntax: WATCH <target>%s%s.",
+                        ch->desc->watching ? ", or WATCH STOP to stop watching " : "",
+                        ch->desc->watching ? GET_CHAR_NAME(ch->desc->watching->character) : "");
 
-    // Stop watching.
-    if (vict->desc->watcher == ch->desc) {
-      vict->desc->watcher = NULL;
-      ch->desc->watching = NULL;
-      send_to_char(ch, "You will no longer be notified every time %s uses a command that resets their idle timer.\r\n", GET_CHAR_NAME(vict));
-      mudlog_vfprintf(ch, LOG_WIZLOG, "No longer watching %s (%ld) for activity.", GET_CHAR_NAME(vict), GET_IDNUM(vict));
+    if (!str_cmp(argument, "stop")) {
+      FAILURE_CASE(!ch->desc->watching, "You're not watching anyone.");
+      staff_stop_watching_for_activity(ch->desc, true);
       return;
     }
 
-    FAILURE_CASE_PRINTF(vict->desc->watcher, "%s is already being watched by someone else.", GET_CHAR_NAME(vict));
+    struct char_data *vict = get_player_vis(ch, argument, FALSE);
+    FAILURE_CASE_PRINTF(!vict, "You don't see anyone named '%s' in game, and it's not a direction either.", argument);
+    FAILURE_CASE_PRINTF(!vict->desc, "%s has no desc -- nothing to watch.", GET_CHAR_NAME(vict));
+    FAILURE_CASE_PRINTF(vict->desc->watcher == ch->desc, "You're already watching %s for activity.", GET_CHAR_NAME(vict));
+
+    // Usurp watch if you're higher level.
+    if (vict->desc->watcher) {
+      struct char_data *watching_char = (vict->desc->watcher->original ? vict->desc->watcher->original : vict->desc->watcher->character);
+      FAILURE_CASE_PRINTF(watching_char && GET_LEVEL(ch) <= GET_LEVEL(watching_char),
+                          "%s is already being watched by %s.",
+                          GET_CHAR_NAME(vict),
+                          GET_CHAR_NAME(vict->desc->watcher->character));
+      send_to_char(ch, "You usurp %s's watch.\r\n", GET_CHAR_NAME(watching_char));
+      send_to_char(watching_char, "Your watch has been usurped by %s.\r\n", GET_CHAR_NAME(ch));
+      staff_stop_watching_for_activity(watching_char->desc, true);
+    }
 
     vict->desc->watcher = ch->desc;
     ch->desc->watching = vict->desc;
@@ -4718,6 +4760,8 @@ ACMD(do_watch)
     mudlog_vfprintf(ch, LOG_WIZLOG, "Watching %s (%ld) for activity.", GET_CHAR_NAME(vict), GET_IDNUM(vict));
     return;
   }
+
+  // Watching directions (player version)
   dir = convert_look[dir];
 
   if (dir == NUM_OF_DIRS) {

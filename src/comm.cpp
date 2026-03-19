@@ -2543,6 +2543,7 @@ void free_editing_structs(descriptor_data *d, int state)
   DELETE_IF_EXTANT(d->edit_exdesc);
 }
 
+extern void staff_stop_watching_for_activity(struct descriptor_data *d, bool send_message);
 void close_socket(struct descriptor_data *d)
 {
   struct descriptor_data *temp;
@@ -2558,9 +2559,8 @@ void close_socket(struct descriptor_data *d)
     d->snoop_by->snooping = NULL;
   }
 
-  /* Forget watching */
   if (d->watching)
-    d->watching->watcher = NULL;
+    staff_stop_watching_for_activity(d, false);
 
   if (d->watcher) {
     SEND_TO_Q("Your watch target is no longer among us.\r\n", d->watcher);

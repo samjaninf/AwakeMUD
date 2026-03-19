@@ -341,7 +341,7 @@ ACMD(do_forms)
     }
 
     if (GET_COMPLEX_FORM_LEARNING_TICKS_LEFT(form) > 1) {
-      if (get_and_deduct_one_crafting_token_from_char(ch)) {
+      if (get_and_deduct_one_crafting_token_from_char(ch, "complex form learning")) {
         send_to_char("A crafting token fuzzes into digital static, greatly accelerating the learning time.\r\n", ch);
         GET_COMPLEX_FORM_LEARNING_TICKS_LEFT(form) = 1;
       }

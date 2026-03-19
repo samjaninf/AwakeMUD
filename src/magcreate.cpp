@@ -378,7 +378,7 @@ void spell_design(struct char_data *ch, struct obj_data *formula)
 
   int success = success_test(skill, target);
 
-  if (get_and_deduct_one_crafting_token_from_char(ch)) {
+  if (get_and_deduct_one_crafting_token_from_char(ch, "spell designing")) {
     send_to_char("A crafting token fuzzes into digital static, greatly accelerating the design time.\r\n", ch);
     GET_SPELLFORMULA_TIME_LEFT(formula) = GET_SPELLFORMULA_INITIAL_TIME(formula) = 1;
     DEBUG_TO_STAFF(ch, "Got %d success%s. (overridden by crafting token)", success, success == 1 ? "" : "es");

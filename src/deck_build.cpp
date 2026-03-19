@@ -598,7 +598,7 @@ ACMD(do_cook) {
           GET_OBJ_TIMER(chip) = -1;
       }
       GET_DECK_ACCESSORY_COOKER_TIME_REMAINING(cooker) = (GET_OBJ_VAL(chip, 1) * 24) / success;
-      if (get_and_deduct_one_crafting_token_from_char(ch)) {
+      if (get_and_deduct_one_crafting_token_from_char(ch, "cooking")) {
         send_to_char("A crafting token fuzzes into digital static, greatly accelerating the cooking time.\r\n", ch);
         GET_OBJ_TIMER(chip) = 0;
         GET_DECK_ACCESSORY_COOKER_TIME_REMAINING(cooker) = 1;
@@ -637,13 +637,11 @@ void part_design(struct char_data *ch, struct obj_data *part) {
         GET_PART_DESIGN_SUCCESSES(part) = success_test(skill, target) << 1;
 #endif
         GET_PART_BUILDER_IDNUM(part) = GET_IDNUM(ch);
-        /* Disabled on design tests by player request.
-        if (get_and_deduct_one_crafting_token_from_char(ch)) {
+        if (get_and_deduct_one_crafting_token_from_char(ch, "part designing")) {
           send_to_char("A crafting token fuzzes into digital static, greatly accelerating the design process.\r\n", ch);
           GET_PART_DESIGN_COMPLETION(part) = 1;
           GET_PART_DESIGN_SUCCESSES(part) = MAX(GET_PART_DESIGN_SUCCESSES(part), 2);
         }
-        */
         if (access_level(ch, LVL_ADMIN)) {
           send_to_char("You use your admin powers to greatly accelerate the design process.\r\n", ch);
           GET_PART_DESIGN_COMPLETION(part) = 1;
@@ -1045,7 +1043,7 @@ ACMD(do_build) {
 
   GET_PART_INITIAL_BUILD_TICKS(obj) = GET_PART_BUILD_TICKS_REMAINING(obj) = duration_in_minutes / success;
 
-  if (get_and_deduct_one_crafting_token_from_char(ch)) {
+  if (get_and_deduct_one_crafting_token_from_char(ch, "part building")) {
     send_to_char("A crafting token fuzzes into digital static, greatly accelerating the build time.\r\n", ch);
     GET_PART_INITIAL_BUILD_TICKS(obj) = GET_PART_BUILD_TICKS_REMAINING(obj) = 1;
     GET_PART_BUILD_SUCCESSES_ROLLED(obj) = 1;

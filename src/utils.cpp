@@ -5374,67 +5374,61 @@ bool builder_cant_go_there(struct char_data *ch, struct room_data *room)
 }
 
 // Allows morts to have accelerated crafting actions. Useful for when their deck breaks.
-bool get_and_deduct_one_crafting_token_from_char(struct char_data *ch)
-{
-  for (struct obj_data *ptr = ch->carrying; ptr; ptr = ptr->next_content)
-  {
-    // Look for crafting tokens.
-    if (GET_OBJ_VNUM(ptr) == OBJ_STAFF_REBATE_FOR_CRAFTING)
-    {
-      // Check for ownership. Staff-loaded tokens can be used by anyone (no token idnum).
-      if (GET_CRAFTING_TOKEN_IDNUM(ptr) > 0 && GET_CRAFTING_TOKEN_IDNUM(ptr) != GET_IDNUM(ch))
-      {
-        char *owner_name = get_player_name(GET_CRAFTING_TOKEN_IDNUM(ptr));
+bool get_and_deduct_one_crafting_token_from_char(struct char_data *ch, const char *usage_string) {
+  struct obj_data *token = GET_EQ(ch, WEAR_HOLD);
 
-        mudlog_vfprintf(ch, LOG_CHEATLOG, "Warning: %s is holding a crafting token that actually belongs to %s (%ld). Forcing them to drop it.",
-                        GET_CHAR_NAME(ch),
-                        owner_name,
-                        GET_CRAFTING_TOKEN_IDNUM(ptr));
+  // Require that you're holding a token.
+  if (!token || GET_OBJ_VNUM(token) != OBJ_STAFF_REBATE_FOR_CRAFTING)
+    return false;
 
-        send_to_char(ch, "%s zaps you, and you drop it.\r\n", GET_OBJ_NAME(ptr));
-        obj_from_char(ptr);
-        if (ch->in_veh) {
-          obj_to_veh(ptr, ch->in_veh);
-        } else if (ch->in_room) {
-          obj_to_room(ptr, ch->in_room);
-        } else {
-          mudlog_vfprintf(ch, LOG_WIZLOG, "Failed to drop token belonging to %s (%ld), sending it to room 0.", owner_name, GET_CRAFTING_TOKEN_IDNUM(ptr));
-          obj_to_room(ptr, &world[0]);
-        }
+  // Prevent use of someone else's crafting token.
+  if (GET_CRAFTING_TOKEN_IDNUM(token) > 0 && GET_CRAFTING_TOKEN_IDNUM(token) != GET_IDNUM(ch)) {
+    char *owner_name = get_player_name(GET_CRAFTING_TOKEN_IDNUM(token));
 
-        delete[] owner_name;
-        continue;
-      }
+    mudlog_vfprintf(ch, LOG_CHEATLOG, "Warning: %s is holding a crafting token that actually belongs to %s (%ld). Forcing them to drop it.",
+                    GET_CHAR_NAME(ch),
+                    owner_name,
+                    GET_CRAFTING_TOKEN_IDNUM(token));
 
-      // Log it.
-      char *issuer_name;
-      if (GET_CRAFTING_TOKEN_ISSUED_BY(ptr) == -1)
-      {
-        issuer_name = str_dup("coded process");
-      }
-      else if (GET_CRAFTING_TOKEN_ISSUED_BY(ptr) == 0)
-      {
-        issuer_name = str_dup("old iload (probably Lucien)");
-      }
-      else
-      {
-        issuer_name = get_player_name(GET_CRAFTING_TOKEN_ISSUED_BY(ptr));
-      }
-
-      mudlog_vfprintf(ch, LOG_CHEATLOG, "%s: Consuming a crafting token (issued by %s / %d) to accelerate a crafting task.",
-                      GET_CHAR_NAME(ch),
-                      issuer_name,
-                      GET_CRAFTING_TOKEN_ISSUED_BY(ptr));
-
-      delete[] issuer_name;
-
-      // Use it.
-      extract_obj(ptr);
-      return TRUE;
+    send_to_char(ch, "%s zaps you, and you drop it.\r\n", GET_OBJ_NAME(token));
+    obj_from_char(token);
+    if (ch->in_veh) {
+      obj_to_veh(token, ch->in_veh);
+    } else if (ch->in_room) {
+      obj_to_room(token, ch->in_room);
+    } else {
+      mudlog_vfprintf(ch, LOG_WIZLOG, "Failed to drop token belonging to %s (%ld), sending it to room 0.", owner_name, GET_CRAFTING_TOKEN_IDNUM(token));
+      obj_to_room(token, &world[0]);
     }
+
+    delete[] owner_name;
+    return false;
   }
 
-  return FALSE;
+  // Log it.
+  {
+    char *issuer_name;
+
+    if (GET_CRAFTING_TOKEN_ISSUED_BY(token) == -1) {
+      issuer_name = str_dup("coded process");
+    } else if (GET_CRAFTING_TOKEN_ISSUED_BY(token) == 0) {
+      issuer_name = str_dup("old iload (probably Lucien)");
+    } else {
+      issuer_name = get_player_name(GET_CRAFTING_TOKEN_ISSUED_BY(token));
+    }
+
+    mudlog_vfprintf(ch, LOG_CHEATLOG, "%s: Consuming a crafting token (issued by %s / %d) to accelerate %s.",
+                    GET_CHAR_NAME(ch),
+                    issuer_name,
+                    GET_CRAFTING_TOKEN_ISSUED_BY(token),
+                    usage_string);
+
+    delete[] issuer_name;
+  }
+
+  // Use it.
+  extract_obj(token);
+  return TRUE;
 }
 
 // States whether a program can be copied or not.

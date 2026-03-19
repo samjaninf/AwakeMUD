@@ -449,26 +449,31 @@ void ExecuteGMCPMessage(descriptor_t *apDescriptor, const char *module, const js
     }
     
     SendGMCPRoomInfo(apDescriptor->character, in_room);
-  } else if (!strncmp(module, "Room.Exits.Get", strlen(module)))
+  }
+  else if (!strncmp(module, "Room.Exits.Get", strlen(module))) {
     if (!apDescriptor->character)
       mudlog_vfprintf(apDescriptor->character, LOG_SYSLOG, "Unable to Handle GMCP Room.Exits.Get Call: No Valid Character");
     else
       SendGMCPExitsInfo(apDescriptor->character);
-  else if (!strncmp(module, "Char.Vitals.Get", strlen(module)))
+  }
+  else if (!strncmp(module, "Char.Vitals.Get", strlen(module))) {
     if (!apDescriptor->character)
       mudlog_vfprintf(apDescriptor->character, LOG_SYSLOG, "Unable to Handle GMCP Char.Vitals.Get Call: No Valid Character");
     else
       SendGMCPCharVitals(apDescriptor->character);
-  else if (!strncmp(module, "Char.Info.Get", strlen(module)))
+  }
+  else if (!strncmp(module, "Char.Info.Get", strlen(module))) {
     if (!apDescriptor->character)
       mudlog_vfprintf(apDescriptor->character, LOG_SYSLOG, "Unable to Handle GMCP Char.Info.Get Call: No Valid Character");
     else
       SendGMCPCharInfo(apDescriptor->character);
-  else if (!strncmp(module, "Char.Pools.Get", strlen(module)))
+  }
+  else if (!strncmp(module, "Char.Pools.Get", strlen(module))) {
     if (!apDescriptor->character)
       mudlog_vfprintf(apDescriptor->character, LOG_SYSLOG, "Unable to Handle GMCP Char.Pools.Get Call: No Valid Character");
     else
       SendGMCPCharPools(apDescriptor->character);
+  }
 #ifdef USE_DISCORD_RICH_PRESENCE
   else if (!strncmp(module, "External.Discord.Hello", strlen(module))) {
     RegisterGMCPDiscordHello(apDescriptor, payload);

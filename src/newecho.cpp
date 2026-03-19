@@ -341,16 +341,14 @@ void send_echo_to_char(struct char_data *actor, struct char_data *viewer, const 
       // send_to_char(actor, "Storage string: '%s' (quote_ptr = %c, start_of_block = %c)\r\n", storage_string, *quote_ptr, *start_of_block);
 
       // Check the string for '@self', '@me', '@myself'
-      if (str_str_isolated(storage_string, "@self") || str_str_isolated(storage_string, "@me") || str_str_isolated(storage_string, "@myself")) {
+      if (!(must_prepend_name = !(str_str_isolated(storage_string, "@self") || str_str_isolated(storage_string, "@me") || str_str_isolated(storage_string, "@myself")))) {
         NEW_EMOTE_DEBUG("^oFound @self/@me/@myself outside of quotes.^n\r\n", actor);
-        must_prepend_name = false;
         break;
       }
 
       // Check the string for the capitalized character's name.
-      if (strstr_isolated(storage_string, capitalize(GET_CHAR_NAME(actor)))) {
+      if (!(must_prepend_name = !strstr_isolated(storage_string, capitalize(GET_CHAR_NAME(actor))))) {
         NEW_EMOTE_DEBUG("^oFound name outside of quotes.^n\r\n", actor);
-        must_prepend_name = false;
         break;
       }
 
@@ -361,7 +359,7 @@ void send_echo_to_char(struct char_data *actor, struct char_data *viewer, const 
       }
 
       // If the next character is a null character, we're at the end of the emote.
-      if (!*(quote_ptr + 1)) {
+      if (!(start_of_block = quote_ptr + 1)) {
         NEW_EMOTE_DEBUG("^oNull character after quote.^n\r\n", actor);
         break;
       }
@@ -375,13 +373,13 @@ void send_echo_to_char(struct char_data *actor, struct char_data *viewer, const 
 
     if (must_prepend_name && start_of_block && *start_of_block) {
       // send_to_char(actor, "Last attempt. Evaluating '%s'.\r\n", start_of_block);
-      if (str_str_isolated(start_of_block, "@self") || str_str_isolated(start_of_block, "@me") || str_str_isolated(start_of_block, "@myself")) {
+      if (!(must_prepend_name = !(str_str_isolated(start_of_block, "@self") || str_str_isolated(start_of_block, "@me") || str_str_isolated(start_of_block, "@myself")))) {
         NEW_EMOTE_DEBUG("^oFound @self/me/myself in final analysis.^n\r\n", actor);
         must_prepend_name = false;
       }
 
       // Check the string for the capitalized character's name.
-      else if (strstr_isolated(start_of_block, capitalize(GET_CHAR_NAME(actor)))) {
+      else if (!(must_prepend_name = !strstr_isolated(start_of_block, capitalize(GET_CHAR_NAME(actor))))) {
         NEW_EMOTE_DEBUG("^oFound name in final analysis.^n\r\n", actor);
         must_prepend_name = false;
       }

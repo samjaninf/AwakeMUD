@@ -7941,6 +7941,8 @@ bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
     } else {
       send_to_char("You rewrite the restring, which is free during character generation.\r\n", ch);
     }
+  } else if (get_and_deduct_one_crafting_token_from_char(ch, "restringing")) {
+      send_to_char(ch, "A crafting token fuzzes into digital static as it merges into %s, transforming it.\r\n", obj->text.name);
   } else {
     if (GET_KARMA(ch) < 250) {
       send_to_char("You don't have enough karma to restring that. It costs 2.5 karma.\r\n", ch);

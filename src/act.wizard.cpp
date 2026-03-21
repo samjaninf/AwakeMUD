@@ -7845,7 +7845,9 @@ ACMD(do_destring)
 
 bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
   struct obj_data *obj;
-  half_chop(argument, arg, buf, sizeof(buf));
+  char restring[MAX_INPUT_LENGTH * 2] = {0};
+
+  half_chop(argument, arg, restring, sizeof(restring));
 
   if (!*arg) {
     send_to_char("Syntax: RESTRING <item> <new short description>\r\n", ch);
@@ -7857,7 +7859,7 @@ bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
     return FALSE;
   }
 
-  if (!*buf) {
+  if (!*restring) {
     if (obj->restring) {
       send_to_char(ch, "%s's current restring is: %s\r\n", GET_OBJ_RAW_NAME(obj), double_up_color_codes(obj->restring));
     } else {
@@ -7876,22 +7878,22 @@ bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
   FALSE_CASE(obj_is_a_vehicle_title(obj), "Vehicle titles are consumable, so they can't be restrung.");
 
   // Ensure we don't contain any forbidden phrases. Error messages are shown in-function.
-  if (check_for_banned_content(buf, ch, MODERATION_MODE_THING_DESCRIPTIONS)) {
+  if (check_for_banned_content(restring, ch, MODERATION_MODE_THING_DESCRIPTIONS)) {
     return FALSE;
   }
 
   // If it's too short to contain a terminal color code,
-  if (strlen(buf) < 2 || 
+  if (strlen(restring) < 2 || 
       // Or the second to last character is not ^
-      (buf[strlen(buf) - 2] != '^' 
+      (restring[strlen(restring) - 2] != '^' 
        // Or the last character is not n
-       || (buf[strlen(buf) - 1] != 'n' && buf[strlen(buf) - 1] != 'N')))
+       || (restring[strlen(restring) - 1] != 'n' && restring[strlen(restring) - 1] != 'N')))
   {
     // Add a terminal color code.
-    strlcat(buf, "^n", sizeof(buf));
+    strlcat(restring, "^n", sizeof(restring));
   }
 
-  int length_with_no_color = get_string_length_after_color_code_removal(buf, ch);
+  int length_with_no_color = get_string_length_after_color_code_removal(restring, ch);
 
   // Silent failure: We already sent the error message in get_string_length_after_color_code_removal().
   if (length_with_no_color == -1)
@@ -7902,7 +7904,7 @@ bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
     return FALSE;
   }
 
-  if (strlen(buf) >= MAX_RESTRING_LENGTH) {
+  if (strlen(restring) >= MAX_RESTRING_LENGTH) {
     send_to_char(ch, "That restring is too long, please shorten it. The maximum length with color codes included is %d characters.\r\n", MAX_RESTRING_LENGTH - 1);
     return FALSE;
   }
@@ -7949,11 +7951,10 @@ bool restring_with_args(struct char_data *ch, char *argument, bool using_sysp) {
     GET_KARMA(ch) -= 250;
   }
 
-  snprintf(buf2, sizeof(buf2), "%s restrung '%s' (%ld) to '%s'", GET_CHAR_NAME(ch), obj->text.name, GET_OBJ_VNUM(obj), buf);
-  mudlog(buf2, ch, LOG_WIZLOG, TRUE);
+  mudlog_vfprintf(ch, LOG_WIZLOG, "%s restrung '%s' (%ld) to '%s'", GET_CHAR_NAME(ch), obj->text.name, GET_OBJ_VNUM(obj), restring);
 
   DELETE_ARRAY_IF_EXTANT(obj->restring);
-  obj->restring = str_dup(buf);
+  obj->restring = str_dup(restring);
   send_to_char(ch, "%s successfully restrung.\r\n", obj->text.name);
 
   // Repackage it to reflect its restrung status.

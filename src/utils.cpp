@@ -2008,6 +2008,14 @@ int get_skill(struct char_data *ch, int skill, int &target, char *writeout_buffe
   // Calculate our starting skill dice.
   int skill_dice = defaulting_tn == 4 ? GET_ATT(ch, skills[skill].attribute) : GET_SKILL(ch, skill);
 
+  if (defaulting_tn == 0 && GET_RACE(ch) == RACE_HUMAN) {
+    // Vanilla humans get a percentage chance of a single extra die on trained skills to somewhat balance the fact that we don't have karma pool mechanics.
+    // Humans are balanced in TT by having double the karma pool accrual of other races/metatypes, but they lack that here.
+    if (number(0, 100) <= 20) {
+      skill_dice++;
+    }
+  }
+
   // If their skill in this area has not been boosted, they get to add their task pool up to the skill's learned level.
   int pool_dice = MIN(REAL_SKILL(ch, skill), GET_TASK_POOL(ch, skills[skill].attribute));
   if (REAL_SKILL(ch, skill) == GET_SKILL(ch, skill))

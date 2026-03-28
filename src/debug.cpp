@@ -5,6 +5,8 @@
 
 #include <time.h>
 #include <string.h>
+#include <math.h>
+#include <stdio.h>
 #include <mysql/mysql.h>
 #include <vector>
 #include <iostream>
@@ -199,6 +201,57 @@ void derpify(const char *phrase, std::initializer_list<const char *> fill_words,
   }
 }
 
+// Given a single exploding d6, what is our chance of success {0..1}?
+double calculate_single_die_chance_of_success(int tn) {
+  // SR3 target numbers are usually 2+, but we'll handle 1 just in case.
+  if (tn <= 1) {
+    return 1.0;
+  }
+  
+  // We must roll K full 6's before we can roll the final die to determine if we hit the TN.
+  int full_sixes_required = tn / 6; // integer truncation means no floor() needed
+
+  // The final die R will be 6 or lower.
+  int final_die_target = tn % 6;
+
+  if (final_die_target == 0) {
+    // Easy, it's the probability of rolling K sixes in a row.
+    return pow(1.0 / 6.0, (double)full_sixes_required);
+  } else {
+    // Otherwise, we return (7 - R) / (6^(K + 1)), which was simplified from (1/6)^K * (7-r) / 6.
+    return (7.0 - final_die_target) / (pow(6.0, (double)full_sixes_required + 1));
+  }
+}
+
+// Given any number of exploding d6, what is our chance of success {0..1}?
+double calculate_multiple_dice_chance_of_success(int dice, int tn) {
+  // We calculate the probability of all dice failing on the roll, which is 1-(single-die success) raised to the power of the number of dice rolled.
+  return 1.0 - pow(1.0 - calculate_single_die_chance_of_success(tn), dice);
+}
+
+// Given any number of exploding d6, what is the delta in the absolute success chance from adding one die? {0..1}
+double calculate_absolute_increase_in_success_chance_from_adding_one_die(int dice, int tn) {
+  double single_die_chance_of_success = calculate_single_die_chance_of_success(tn);
+  double single_die_chance_of_failure = 1.0 - single_die_chance_of_success; // Probability of failure
+
+  // Formula: p * (q ^ n)
+  return single_die_chance_of_success * pow(single_die_chance_of_failure, (double)dice);
+}
+
+// Given a dice pool and a TN, what is the PERCENTAGE IMPROVEMENT to success chances from adding another die?
+double calculate_relative_percentage_boost_from_adding_one_die(int dice, int tn) {
+    if (dice <= 0) return 0.0; // Cannot calculate relative growth from 0% success
+
+    double single_die_chance_of_success = calculate_single_die_chance_of_success(tn);
+    double single_die_chance_of_failure = 1.0 - single_die_chance_of_success;
+    
+    double current_success_rate = 1.0 - pow(single_die_chance_of_failure, (double)dice);
+    double absolute_gain = single_die_chance_of_success * pow(single_die_chance_of_failure, (double)dice);
+    
+    // (Gain / Current) * 100 to get the percentage
+    return (absolute_gain / current_success_rate) * 100.0;
+}
+
 bool drinks_are_unfucked = TRUE;
 ACMD(do_debug) {
   static char arg1[MAX_INPUT_LENGTH];
@@ -234,6 +287,62 @@ ACMD(do_debug) {
     send_to_char(ch, "\e[53moverlined test\e[0m\r\n");
     return;
   }
+
+  #define _DBG_MAX_DICE 30
+  #define _DBG_MAX_TN 25
+  if (!str_cmp(arg1, "humanboost")) {
+    // Formula for determining the delta of probability of at least one success for adding one die: p * (1-p)^n / (1 - (1-p)^n) where p = single-die success and n = number of existing dice
+    send_to_char(ch, "Percentage chance effects of giving humans +1 dice on tests:\r\n");
+    send_to_char(ch, "  v- Dice\r\n");
+
+    for (int dice = _DBG_MAX_DICE; dice >= 1; dice--) {
+      char output_ln[1000] = {0};
+      snprintf(output_ln, sizeof(output_ln), "%3d | ", dice);
+
+      for (int tn = 2; tn <= _DBG_MAX_TN; tn++) {
+        double result = calculate_relative_percentage_boost_from_adding_one_die(dice, tn);
+        snprintf(ENDOF(output_ln), sizeof(output_ln) - strlen(output_ln), "^%s%3.0f%%^n ",
+                 result >= 89.5 ? "R" : (result >= 74.5 ? "Y" : (result >= 49.5 ? "y" : (result >= 24.5 ? "g" : "c"))),
+                 result
+                );
+      }
+      send_to_char(ch, "%s\r\n", output_ln);
+    }
+
+    send_to_char(ch, "TN->  ");
+    for (int tn = 2; tn <= _DBG_MAX_TN; tn++) {
+      send_to_char(ch, "%3d  ", tn);
+    }
+    send_to_char("\r\n", ch);
+
+    ///////////////////
+
+    send_to_char(ch, "\r\n\r\nAbsolute probability change of giving humans +1 dice on tests:\r\n");
+    send_to_char(ch, "  v- Dice\r\n");
+
+    for (int dice = _DBG_MAX_DICE; dice >= 1; dice--) {
+      char output_ln[1000] = {0};
+      snprintf(output_ln, sizeof(output_ln), "%3d | ", dice);
+
+      for (int tn = 2; tn <= _DBG_MAX_TN; tn++) {
+        double result = calculate_absolute_increase_in_success_chance_from_adding_one_die(dice, tn);
+        snprintf(ENDOF(output_ln), sizeof(output_ln) - strlen(output_ln), "^%s%0.3f^n ",
+                 result >= 0.25 ? "R" : (result >= 0.2 ? "Y" : (result >= 0.15 ? "y": (result >= 0.05 ? "g" : (result >= 0.01 ? "c" : "n")))),
+                 result
+                );
+      }
+      send_to_char(ch, "%s\r\n", output_ln);
+    }
+
+    send_to_char(ch, "TN->  ");
+    for (int tn = 2; tn <= _DBG_MAX_TN; tn++) {
+      send_to_char(ch, " %3d  ", tn);
+    }
+    send_to_char("\r\n", ch);
+    return;
+  }
+  #undef _DBG_MAX_DICE
+  #undef _DBG_MAX_TN
 
   if (!str_cmp(arg1, "test_whole_word_finder")) {
     bool whole_word_exists_in_str(const char* keyword, const char* str);

@@ -6635,7 +6635,7 @@ struct obj_data *make_new_finished_part(int part_type, int mpcp, int rating = 0)
 {
   struct obj_data *part = read_object(OBJ_BLANK_PART_DESIGN, VIRTUAL, OBJ_LOAD_REASON_STAFF_DECK);
   GET_PART_TYPE(part) = part_type;
-  GET_PART_DESIGN_COMPLETION(part) = 0;
+  GET_PART_DESIGN_TICKS_REMAINING(part) = 0;
   GET_PART_TARGET_MPCP(part) = mpcp;
   GET_PART_PART_COST(part) = 0;
   GET_PART_CHIP_COST(part) = 0;

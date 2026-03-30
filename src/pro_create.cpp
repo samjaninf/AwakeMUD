@@ -627,7 +627,7 @@ void update_buildrepair(void)
           }
           STOP_WORKING(desc->character);
         }
-      } else if (AFF_FLAGGED(desc->character, AFF_PART_DESIGN) && --GET_PART_DESIGN_COMPLETION(PROG) < 1) {
+      } else if (AFF_FLAGGED(desc->character, AFF_PART_DESIGN) && --GET_PART_DESIGN_TICKS_REMAINING(PROG) < 1) {
         send_to_char(desc->character, "You complete the design plan for %s.\r\n", GET_OBJ_NAME(PROG));
         CH->char_specials.timer = 0;
         STOP_WORKING(CH);

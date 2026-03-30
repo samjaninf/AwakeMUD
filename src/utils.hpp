@@ -1092,7 +1092,7 @@ bool CAN_SEE_ROOM_SPECIFIED(struct char_data *subj, struct char_data *obj, struc
 #define GET_PART_TYPE(part)                    (GET_OBJ_VAL((part), 0))
 #define GET_PART_RATING(part)                  (GET_OBJ_VAL((part), 1))
 #define GET_PART_TARGET_MPCP(part)             (GET_OBJ_VAL((part), 2))
-#define GET_PART_DESIGN_COMPLETION(part)       (GET_OBJ_VAL((part), 3)) //0 = done, -1 = required ?
+#define GET_PART_DESIGN_TICKS_REMAINING(part)  (GET_OBJ_VAL((part), 3)) /* 0 = done, -1 = required and not started, positive integer started */
 #define GET_PART_BUILD_TICKS_REMAINING(part)   (GET_OBJ_VAL((part), 4))
 #define GET_PART_DESIGN_SUCCESSES(part)        (GET_OBJ_VAL((part), 5))
 #define GET_PART_BUILDER_IDNUM(part)           (GET_OBJ_VAL((part), 7))

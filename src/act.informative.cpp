@@ -650,7 +650,7 @@ bool items_are_visually_similar(struct obj_data *first, struct obj_data *second)
       break;
     case ITEM_PART:
       // Designed / not designed.
-      COMPARE(GET_PART_DESIGN_COMPLETION);
+      COMPARE(GET_PART_DESIGN_TICKS_REMAINING);
       break;
   }
   #undef COMPARE
@@ -3730,8 +3730,8 @@ void do_probe_object(struct char_data * ch, struct obj_data * j, bool is_in_shop
       }
       break;
     case ITEM_PART:
-      snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), "It is %s rating-^C%d^n ^c%s^n designed for MPCP ^c%d^n decks. It will cost %d nuyen in parts and %d nuyen in chips to build.",
-               !GET_PART_DESIGN_COMPLETION(j) ? "a not-yet-designed" : AN(parts[GET_PART_TYPE(j)].name),
+      snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), "It is %s rating-^C%d^n ^c%s^n intended for MPCP ^c%d^n decks. It will cost %d nuyen in parts and %d nuyen in chips to build.",
+               GET_PART_DESIGN_TICKS_REMAINING(j) < 0 ? "a not-yet-designed" : (GET_PART_DESIGN_TICKS_REMAINING(j) > 0 ? "a design-in-progress" : "a"),
                GET_PART_RATING(j),
                parts[GET_PART_TYPE(j)].name,
                GET_PART_TARGET_MPCP(j),

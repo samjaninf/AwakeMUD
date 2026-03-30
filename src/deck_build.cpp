@@ -271,9 +271,9 @@ void pbuild_parse(struct descriptor_data *d, const char *arg) {
 
             // Set design requirements (if needed)
             if (parts[GET_PART_TYPE(PART)].design == -1) {
-                GET_PART_DESIGN_COMPLETION(PART) = 0;
+                GET_PART_DESIGN_TICKS_REMAINING(PART) = 0;
             } else {
-                GET_PART_DESIGN_COMPLETION(PART) = -1;
+                GET_PART_DESIGN_TICKS_REMAINING(PART) = -1;
             }
 
             // ?
@@ -628,7 +628,7 @@ void part_design(struct char_data *ch, struct obj_data *part) {
         }
     } else {
         int target = GET_PART_TARGET_MPCP(part)/2, skill = get_skill(ch, SKILL_CYBERTERM_DESIGN, target);
-        GET_PART_DESIGN_COMPLETION(part) = GET_PART_TARGET_MPCP(part) * 2;
+        GET_PART_DESIGN_TICKS_REMAINING(part) = GET_PART_TARGET_MPCP(part) * 2;
 #ifdef DIES_IRAE
         // Matrix pg 55, half of design successes are used to reduce the build TN
         GET_PART_DESIGN_SUCCESSES(part) = success_test(skill, target) >> 1;
@@ -639,12 +639,12 @@ void part_design(struct char_data *ch, struct obj_data *part) {
         GET_PART_BUILDER_IDNUM(part) = GET_IDNUM(ch);
         if (get_and_deduct_one_crafting_token_from_char(ch, "part designing")) {
           send_to_char("A crafting token fuzzes into digital static, greatly accelerating the design process.\r\n", ch);
-          GET_PART_DESIGN_COMPLETION(part) = 1;
+          GET_PART_DESIGN_TICKS_REMAINING(part) = 1;
           GET_PART_DESIGN_SUCCESSES(part) = MAX(GET_PART_DESIGN_SUCCESSES(part), 2);
         }
         if (access_level(ch, LVL_ADMIN)) {
           send_to_char("You use your admin powers to greatly accelerate the design process.\r\n", ch);
-          GET_PART_DESIGN_COMPLETION(part) = 1;
+          GET_PART_DESIGN_TICKS_REMAINING(part) = 1;
           GET_PART_DESIGN_SUCCESSES(part) = 100;
         }
         send_to_char(ch, "You begin to design %s.\r\n", GET_OBJ_NAME(part));
@@ -768,7 +768,7 @@ ACMD(do_build) {
     return;
   }
 
-  if (GET_PART_DESIGN_COMPLETION(obj)) {
+  if (GET_PART_DESIGN_TICKS_REMAINING(obj) != 0) {
     send_to_char(ch, "You must ##^WDESIGN^n %s first.\r\n", decapitalize_a_an(GET_OBJ_NAME(obj)));
     return;
   }
@@ -1126,7 +1126,7 @@ ACMD(do_progress)
   }
 
   if (AFF_FLAGS(ch).IsSet(AFF_PART_DESIGN)) {
-    amount_left = GET_PART_DESIGN_COMPLETION(GET_BUILDING(ch));
+    amount_left = GET_PART_DESIGN_TICKS_REMAINING(GET_BUILDING(ch));
     amount_needed = GET_PART_TARGET_MPCP(GET_BUILDING(ch)) * 2;
     send_to_char(ch, "You are about %2.2f%% of the way through designing %s.\r\n",
            (((float)(amount_needed - amount_left) * 100) / amount_needed), GET_OBJ_NAME(GET_BUILDING(ch)));

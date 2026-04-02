@@ -1356,7 +1356,7 @@ bool that_was_just_too_fast(struct char_data *ch) {
   double time_delta_since_start = difftime(time(0), GET_QUEST_STARTED(ch));
 
   if (time_delta_since_start < QUEST_MINIMUM_TIME_IN_SECONDS) {
-    send_to_char(ch, "[OOC: It's great that you got that done so quickly, but jobs are expected to take longer than that. As a note, using aliases or triggers to automatically do jobs is a violation of Policy 6.1, even if the aliases you're using are defined in-game.]^n");
+    send_to_char(ch, "[OOC: It's great that you got that done so quickly, but jobs are expected to take longer than that. As a note, using aliases or triggers to automatically do jobs is a violation of Policy 6.1, even if the aliases you're using are defined in-game.]^n\r\n");
     mudlog_vfprintf(ch, LOG_CHEATLOG, "Temporarily refusing quest turnin for %s (%ld)'s quest %ld due to it being completed too fast (%0.2fs < %ds).",
       GET_CHAR_NAME(ch),
       GET_IDNUM(ch),

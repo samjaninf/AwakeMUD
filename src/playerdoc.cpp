@@ -77,7 +77,12 @@ int alert_player_doctors_of_mort(struct char_data *ch, struct obj_data *docwagon
     if (!AFF_FLAGGED(plr, AFF_WEARING_ACTIVE_DOCWAGON_RECEIVER) || !AWAKE(plr))
       continue;
 
+    // Account for full IC blocks.
     if (IS_IGNORING(plr, is_blocking_ic_interaction_from, ch) || IS_IGNORING(ch, is_blocking_ic_interaction_from, plr))
+      continue;
+    
+    // Account for Docwagon blocks.
+    if (IS_IGNORING(plr, is_blocking_docwagon_interaction_with, ch) || IS_IGNORING(ch, is_blocking_docwagon_interaction_with, plr))
       continue;
 
     // Compose the display string.
@@ -194,7 +199,12 @@ void alert_player_doctors_of_contract_withdrawal(struct char_data *ch, bool with
       continue;
 
     if (IS_IGNORING(d->character, is_blocking_ic_interaction_from, ch) || IS_IGNORING(ch, is_blocking_ic_interaction_from, d->character)) {
-      // log_vfprintf("playerdoc-upped-debug: %s skipping %s due to ignore state", GET_CHAR_NAME(ch), GET_CHAR_NAME(d->character));
+      // log_vfprintf("playerdoc-upped-debug: %s skipping %s due to IC ignore state", GET_CHAR_NAME(ch), GET_CHAR_NAME(d->character));
+      continue;
+    }
+
+    if (IS_IGNORING(d->character, is_blocking_docwagon_interaction_with, ch) || IS_IGNORING(ch, is_blocking_docwagon_interaction_with, d->character)) {
+      // log_vfprintf("playerdoc-upped-debug: %s skipping %s due to Docwagon ignore state", GET_CHAR_NAME(ch), GET_CHAR_NAME(d->character));
       continue;
     }
 
@@ -274,7 +284,15 @@ bool handle_player_docwagon_track(struct char_data *ch, char *argument) {
     // Ignoring you, or you ignoring them?
     if (IS_IGNORING(d->character, is_blocking_ic_interaction_from, ch) || IS_IGNORING(ch, is_blocking_ic_interaction_from, d->character)) {
       if (access_level(ch, LVL_PRESIDENT)) {
-        send_to_char(ch, "DEBUG: Skipping %s: Ignoring or ignored.\r\n", GET_CHAR_NAME(d->character));
+        send_to_char(ch, "DEBUG: Skipping %s: Ignoring or ignored (IC).\r\n", GET_CHAR_NAME(d->character));
+      }
+      continue;
+    }
+
+    // Ignoring you, or you ignoring them?
+    if (IS_IGNORING(d->character, is_blocking_docwagon_interaction_with, ch) || IS_IGNORING(ch, is_blocking_docwagon_interaction_with, d->character)) {
+      if (access_level(ch, LVL_PRESIDENT)) {
+        send_to_char(ch, "DEBUG: Skipping %s: Ignoring or ignored (Docwagon).\r\n", GET_CHAR_NAME(d->character));
       }
       continue;
     }
@@ -422,7 +440,15 @@ ACMD(do_docwagon) {
     // Being ignored?
     if (IS_IGNORING(d->character, is_blocking_ic_interaction_from, ch) || IS_IGNORING(ch, is_blocking_ic_interaction_from, d->character)) {
       if (access_level(ch, LVL_PRESIDENT)) {
-        send_to_char(ch, " - Skipping %s: Ignoring or ignored.\r\n", GET_CHAR_NAME(d->character));
+        send_to_char(ch, " - Skipping %s: Ignoring or ignored (IC).\r\n", GET_CHAR_NAME(d->character));
+      }
+      continue;
+    }
+
+    // Being ignored?
+    if (IS_IGNORING(d->character, is_blocking_docwagon_interaction_with, ch) || IS_IGNORING(ch, is_blocking_docwagon_interaction_with, d->character)) {
+      if (access_level(ch, LVL_PRESIDENT)) {
+        send_to_char(ch, " - Skipping %s: Ignoring or ignored (Docwagon).\r\n", GET_CHAR_NAME(d->character));
       }
       continue;
     }
@@ -517,6 +543,9 @@ void send_docwagon_chat_message(struct char_data *ch, const char *message, bool 
       continue;
 
     if (IS_IGNORING(plr, is_blocking_ic_interaction_from, ch) || IS_IGNORING(ch, is_blocking_ic_interaction_from, plr))
+      continue;
+
+    if (IS_IGNORING(plr, is_blocking_docwagon_interaction_with, ch) || IS_IGNORING(ch, is_blocking_docwagon_interaction_with, plr))
       continue;
 
     char message_buf[MAX_INPUT_LENGTH * 2];

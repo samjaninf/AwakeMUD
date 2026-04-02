@@ -3468,6 +3468,7 @@ const char *ignored_bits_in_english[] =
     "interaction",
     "following",
     "calls",
+    "docwagon visibility",
     "ERROR: Coder forgot to add their new bit to ignored_bits_in_english!"
   };
 

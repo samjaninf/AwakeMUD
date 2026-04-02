@@ -26,7 +26,8 @@ method_function ignore_function_sorted_by_bit[NUM_IGNORE_BITS] {
   &IgnoreData::toggle_blocking_osays,
   &IgnoreData::toggle_blocking_ic_interaction,
   &IgnoreData::toggle_blocking_following,
-  &IgnoreData::toggle_blocking_calls
+  &IgnoreData::toggle_blocking_calls,
+  &IgnoreData::toggle_blocking_docwagon_visibility
 };
 
 ACMD(do_ignore) {
@@ -272,6 +273,11 @@ bool IgnoreData::toggle_blocking_ic_interaction(long vict_idnum, const char *vic
       toggle_blocking_calls(vict_idnum, vict_name, MODE_SILENT);
       SEND_WITH_PRECURSOR(" - Calls\r\n", ch);
     }
+
+    if (!is_blocking_docwagon_interaction_with(vict_idnum)) {
+      toggle_blocking_docwagon_visibility(vict_idnum, vict_name, MODE_SILENT);
+      SEND_WITH_PRECURSOR(" - Docwagon visibility\r\n", ch);
+    }
     return TRUE;
   }
 }
@@ -321,6 +327,19 @@ bool IgnoreData::toggle_blocking_calls(long vict_idnum, const char *vict_name, i
   } else {
     SEND_TO_CH_IF_NOT_SILENT(ch, "You no longer allow %s to call you.\r\n", vict_name);
     _set_ignore_bit_for(IGNORE_BIT_CALLS, vict_idnum);
+    return TRUE;
+  }
+}
+
+// Block Docwagon pings to/from the targeted person.
+bool IgnoreData::toggle_blocking_docwagon_visibility(long vict_idnum, const char *vict_name, int mode) {
+  if (is_blocking_docwagon_interaction_with(vict_idnum)) {
+    SEND_TO_CH_IF_NOT_SILENT(ch, "You will now allow %s to see your Docwagon pings, and you will see theirs.\r\n", vict_name);
+    _remove_ignore_bit_for(IGNORE_BIT_DOCWAGON, vict_idnum);
+    return FALSE;
+  } else {
+    SEND_TO_CH_IF_NOT_SILENT(ch, "You no longer allow %s to see your Docwagon pings, and you will no longer see theirs.\r\n", vict_name);
+    _set_ignore_bit_for(IGNORE_BIT_DOCWAGON, vict_idnum);
     return TRUE;
   }
 }

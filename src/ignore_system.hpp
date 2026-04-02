@@ -44,7 +44,8 @@
 #define IGNORE_BIT_IC_INTERACTION  6 // includes shouts
 #define IGNORE_BIT_FOLLOWING       7
 #define IGNORE_BIT_CALLS           8
-#define NUM_IGNORE_BITS            9
+#define IGNORE_BIT_DOCWAGON        9
+#define NUM_IGNORE_BITS            10
 
 extern const char *ignored_bits_in_english[];
 
@@ -115,6 +116,18 @@ public:
   bool toggle_blocking_where_visibility(long vict_idnum, const char *vict_name, int mode);
   bool is_blocking_where_visibility_for(long vict_idnum) { return _ignore_bit_is_set_for(IGNORE_BIT_WHERE, vict_idnum); }
   bool is_blocking_where_visibility_for(struct char_data *vict) { return vict && is_blocking_where_visibility_for(GET_IDNUM_EVEN_IF_PROJECTING(vict)); }
+
+  // Used to block the target from interacting with you through the DOCWAGON command.
+  bool toggle_blocking_docwagon_visibility(long vict_idnum, const char *vict_name, int mode);
+  bool is_blocking_docwagon_interaction_with(long vict_idnum) { return _ignore_bit_is_set_for(IGNORE_BIT_DOCWAGON, vict_idnum); }
+  bool is_blocking_docwagon_interaction_with(struct char_data *vict) { return vict && is_blocking_docwagon_interaction_with(GET_IDNUM_EVEN_IF_PROJECTING(vict)); }
+
+  /* Adding a new function? You'll need to:
+   * - Add the three function signatures here (see above) and define the toggle function in ignore_system.cpp
+   * - Add it to `method_function ignore_function_sorted_by_bit[NUM_IGNORE_BITS]` in ignore_system.cpp
+   * - Add it to `toggle_blocking_ic_interaction` in ignore_system.cpp (if relevant)
+   * - Update the `ignored_bits_in_english` list in constants.cpp
+   */
 
   // Internal-use helper functions. I can almost guarantee you want to be using one of the above functions instead.
   bool _ignore_bit_is_set_for(int ignore_bit, long vict_idnum);

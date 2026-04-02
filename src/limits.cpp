@@ -702,8 +702,6 @@ void check_idling(void)
         }
         */
 
-      #define VNUM_IS_NERPCORPOLIS(vnum) (vnum >= 6900 && vnum <= 6999)
-
       if (!ch->desc && !PLR_FLAGGED(ch, PLR_PROJECT) && (ch->char_specials.timer > NUM_MINUTES_BEFORE_LINKDEAD_EXTRACTION || PLR_FLAGGED(ch, PLR_IN_CHARGEN))) {
         // If they're a PC in an apartment that they own, set their loadroom there.
         if (!IS_NPC(ch)) {

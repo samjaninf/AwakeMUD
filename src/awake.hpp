@@ -2575,6 +2575,7 @@ enum {
 #define RM_CAS_DOCWAGON              98017
 #define RM_NERPCORPOLIS_RECEPTIONIST 6900
 #define RM_NERPCORPOLIS_LOBBY        6901
+#define VNUM_IS_NERPCORPOLIS(vnum) (vnum >= 6900 && vnum <= 6999)
 #define RM_PORTLAND_PARKING_GARAGE1  2751 + number(0, 2)
 #define RM_PORTLAND_PARKING_GARAGE2  2756 + number(0, 2)
 #define RM_PORTLAND_PARKING_GARAGE3  2762 + number(0, 2)
@@ -2594,6 +2595,7 @@ enum {
 // Adding a new DocWagon room? Add it to do_die's exclusion list!
 #define RM_NERPCORPOLIS_RECEPTIONIST RM_ENTRANCE_TO_DANTES
 #define RM_NERPCORPOLIS_LOBBY        RM_ENTRANCE_TO_DANTES
+#define VNUM_IS_NERPCORPOLIS(vnum) (vnum >= -1 && vnum <= -1)
 #define RM_PORTLAND_PARKING_GARAGE   RM_DANTES_GARAGE
 #define RM_SEATTLE_PARKING_GARAGE    RM_DANTES_GARAGE
 #define RM_CARIB_PARKING_GARAGE      RM_DANTES_GARAGE

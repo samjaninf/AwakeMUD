@@ -3471,13 +3471,30 @@ struct obj_data *create_credstick(struct char_data *ch, int amount)
 
   obj = read_object(num, VIRTUAL, OBJ_LOAD_REASON_MOB_LOOT);
 
-  GET_OBJ_VAL(obj, 0) = amount;
-  GET_OBJ_VAL(obj, 3) = 0;
-  GET_OBJ_VAL(obj, 4) = ch->nr;
+  GET_ITEM_MONEY_VALUE(obj) = amount;
+  GET_ITEM_MONEY_CREDSTICK_IS_PC_OWNED(obj) = 0;
+  GET_ITEM_MONEY_CREDSTICK_OWNER_ID(obj) = ch->nr;
   if (num < 102)
-    GET_OBJ_VAL(obj, 5) = (number(1, 9) * 100000) + (number(0, 9) * 10000) +
-    (number(0, 9) * 1000) + (number(0, 9) * 100) +
-    (number(0, 9) * 10) + number(0, 9);
+    GET_ITEM_MONEY_CREDSTICK_LOCKCODE(obj) = (number(1, 9) * 100000) + number(0, 99999);  // between 1000000 - 999999.
+
+  // Because it amuses me - LS
+  if (number(0, 1000000) == 0) {
+    const char *color = NULL;
+    switch (num) {
+      case 100: color = "plastic"; break;
+      case 101: color = "steel"; break;
+      case 102: color = "silver"; break;
+      case 103: color = "titanium"; break;
+      case 104: color = "platinum"; break;
+      case 105: color = "emerald"; break;
+      default: color = "moldy"; break;
+    }
+    char tmp_buf[1000];
+    snprintf(tmp_buf, sizeof(tmp_buf), "a %s... breadstick?", color);
+    obj->restring = str_dup(tmp_buf);
+    snprintf(tmp_buf, sizeof(tmp_buf), "Someone apparently decided to hide their credstick in a stick of bread, possibly for anti-theft reasons. It's garlickly and delicious-looking, but would probably break your teeth. Still works, though.");
+    obj->photo = str_dup(tmp_buf);
+  }
 
   return obj;
 }

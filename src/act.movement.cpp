@@ -640,11 +640,13 @@ bool check_fall(struct char_data *ch, int modifier, const char *fall_message)
 
   dice = get_skill(ch, SKILL_ATHLETICS, base_target);
 
-  int levitate_dice = affected_by_spell(ch, SPELL_LEVITATE);
-  if (levitate_dice) {
-    snprintf(ENDOF(roll_buf), sizeof(roll_buf) - strlen(roll_buf), "Adding %d dice to athletics skill due to levitate spell. ", levitate_dice);
-    dice += levitate_dice;
+  int levitate_force = affected_by_spell(ch, SPELL_LEVITATE);
+  if (levitate_force) {
+    snprintf(ENDOF(roll_buf), sizeof(roll_buf) - strlen(roll_buf), "Subtracting %d from TN due to levitate spell. ", levitate_force);
+    base_target -= levitate_force;
   }
+
+  base_target = MAX(base_target, 2);
 
   snprintf(ENDOF(roll_buf), sizeof(roll_buf) - strlen(roll_buf), "Athletics check: Rolling %d dice against a final TN of %d results in ", dice, base_target);
   // dice += GET_REA(ch);

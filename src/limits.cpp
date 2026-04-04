@@ -812,27 +812,29 @@ int calculate_swim_successes(struct char_data *ch) {
 
   snprintf(buf, sizeof(buf), "%s rolled %d", GET_CHAR_NAME(ch), skill_dice);
 
-  // Levitate always applies.
-  if ((levitate_bonus = affected_by_spell(ch, SPELL_LEVITATE))) {
-    skill_dice += levitate_bonus;
-    snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), " + %d (levitate)", levitate_bonus);
-  }
-
   // Fins only matter if you're conscious and able to use them.
   if (fin_bonus && GET_POS(ch) >= POS_RESTING) {
     skill_dice += fin_bonus;
     snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), " + %d (fins)", fin_bonus);
   }
 
+  // Levitate always applies.
+  if ((levitate_bonus = affected_by_spell(ch, SPELL_LEVITATE))) {
+    swim_test_target -= levitate_bonus;
+  }
+  
+  swim_test_target = MAX(2, swim_test_target);
+
   opposing_dice = MAX(2, ch->in_room->rating);
 
   successes = success_test(skill_dice, swim_test_target);
   successes -= success_test(opposing_dice, skill_dice);
 
-  snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), " dice against TN %d (lowered from %d by WW %d), opposed by %d dice at TN %d: %d net success%s.\r\n",
+  snprintf(ENDOF(buf), sizeof(buf) - strlen(buf), " dice against TN %d (lowered from %d by WW %d + lev %d), opposed by %d dice at TN %d: %d net success%s.\r\n",
            swim_test_target,
-           swim_test_target + water_wings_bonus,
+           swim_test_target + water_wings_bonus + levitate_bonus,
            water_wings_bonus,
+           levitate_bonus,
            opposing_dice,
            skill_dice,
            successes,

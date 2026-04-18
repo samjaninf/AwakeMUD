@@ -2898,26 +2898,38 @@ struct obj_data *find_workshop(struct char_data *ch, int type)
   if (!ch->in_veh && !ch->in_room)
     return NULL;
 
-  // If they're in a valid room, return the room's workshop field for MAXIMUM EFFICIENCY.
-  if (ch->in_room)
-    return ch->in_room->best_workshop[type];
-
-  // Iterate through vehicle's contents and find the best candidate.
-  for (struct obj_data *o = ch->in_veh->contents; o; o = o->next_content)
-  {
-    if (o->vfront != ch->vfront)
-      continue;
-
-    if (GET_OBJ_TYPE(o) == ITEM_WORKSHOP && GET_WORKSHOP_TYPE(o) == type)
-    {
-      if (GET_WORKSHOP_GRADE(o) == TYPE_FACILITY)
-      {
-        // Jackpot! Facilities are the best option, so we can terminate early and return this item.
-        return o;
+  if (ch->in_room) {
+    // If you're in an apartment, you can only use it if you're an owner or guest.
+    if (ch->in_room->apartment && !ch->in_room->apartment->is_owner_or_guest_with_valid_lease(ch)) {
+      if (ch->in_room->best_workshop[type]) {
+        send_to_char(ch, "You briefly consider using %s, but it's not yours and you're not an official guest here.\r\n",
+                     GET_OBJ_NAME(ch->in_room->best_workshop[type]));
       }
-      else if (GET_WORKSHOP_GRADE(o) == TYPE_WORKSHOP && GET_WORKSHOP_IS_SETUP(o))
-        workshop = o;
-      // If we got here, it's either a kit, or a workshop that's not set up.
+      return NULL;
+    }
+
+    // If you're allowed to use workshops in this room, return the cached workshop field instead of iterating.
+    return ch->in_room->best_workshop[type];
+  }
+
+  if (ch->in_veh) {
+    // Iterate through vehicle's contents and find the best candidate.
+    for (struct obj_data *o = ch->in_veh->contents; o; o = o->next_content)
+    {
+      if (o->vfront != ch->vfront)
+        continue;
+
+      if (GET_OBJ_TYPE(o) == ITEM_WORKSHOP && GET_WORKSHOP_TYPE(o) == type)
+      {
+        if (GET_WORKSHOP_GRADE(o) == TYPE_FACILITY)
+        {
+          // Jackpot! Facilities are the best option, so we can terminate early and return this item.
+          return o;
+        }
+        else if (GET_WORKSHOP_GRADE(o) == TYPE_WORKSHOP && GET_WORKSHOP_IS_SETUP(o))
+          workshop = o;
+        // If we got here, it's either a kit, or a workshop that's not set up.
+      }
     }
   }
 

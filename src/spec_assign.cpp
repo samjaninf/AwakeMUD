@@ -50,7 +50,7 @@ struct teach_data metamagict[] = {
                          { 35538, { META_MASKING, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, "", 0},
                          { 27426, { META_CLEANSING, 0, 0, 0, 0, 0, 0, 0 }, "", 0},
 #ifdef USE_PRIVATE_CE_WORLD
-                         { 94313, { META_ANCHORING, META_CENTERING, META_INVOKING, META_POSSESSING, META_QUICKENING, META_SHIELDING, 0, 0 }, "", 0}, // NERP metamagic trainer
+                         { 94313, { META_ANCHORING, META_CENTERING, META_INVOKING, META_POSSESSING, META_QUICKENING, META_SHIELDING, META_DIVINING, 0 }, "", 0}, // NERP metamagic trainer
 #endif
                          { 0, { 0, 0, 0, 0, 0, 0, 0, 0, 0 }, "", 0}
                        };

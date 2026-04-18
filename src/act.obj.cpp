@@ -621,6 +621,7 @@ ACMD(do_put)
 	{
 		FAILURE_CASE_PRINTF(!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying)), "You aren't carrying %s %s.", AN(arg1), arg1);
 		FAILURE_CASE_PRINTF(obj == cont, "You can't combine %s with itself.", GET_OBJ_NAME(obj));
+    FAILURE_CASE_PRINTF(cont->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
 		// Combining chems.
 		if (GET_OBJ_VNUM(cont) == OBJ_ANTI_DRUG_CHEMS)
@@ -651,6 +652,7 @@ ACMD(do_put)
 	{
 		FAILURE_CASE_PRINTF(!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying)), "You aren't carrying %s %s.", AN(arg1), arg1);
 		FAILURE_CASE_PRINTF(obj == cont, "You cannot combine %s with itself.", decapitalize_a_an(GET_OBJ_NAME(cont)));
+    FAILURE_CASE_PRINTF(cont->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
 		// Restriction: You can't wombo-combo non-ammo into ammo.
 		FAILURE_CASE_PRINTF(GET_OBJ_TYPE(obj) != ITEM_GUN_AMMO, "%s will only accept the contents of other ammo boxes, and %s^n doesn't qualify.",
@@ -685,11 +687,9 @@ ACMD(do_put)
 	if ((GET_OBJ_TYPE(cont) == ITEM_DECK_ACCESSORY && GET_DECK_ACCESSORY_TYPE(cont) == TYPE_PARTS) ||
 			(GET_OBJ_TYPE(cont) == ITEM_MAGIC_TOOL && GET_MAGIC_TOOL_TYPE(cont) == TYPE_SUMMONING))
 	{
-		// Find the object.
 		FAILURE_CASE_PRINTF(!(obj = get_obj_in_list_vis(ch, arg1, ch->carrying)), "You aren't carrying %s %s.\r\n", AN(arg1), arg1);
-
-		// Not the same object as container.
 		FAILURE_CASE_PRINTF(obj == cont, "You cannot combine %s with itself.\r\n", GET_OBJ_NAME(obj));
+    FAILURE_CASE_PRINTF(cont->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
 		// Must match types.
 		FAILURE_CASE_PRINTF(GET_OBJ_TYPE(cont) != GET_OBJ_TYPE(obj), "You cannot combine %s with %s.\r\n", GET_OBJ_NAME(obj), GET_OBJ_NAME(cont));
@@ -771,7 +771,7 @@ ACMD(do_put)
 			// You can only install programs, parts, and designs.
 			if (GET_OBJ_TYPE(obj) != ITEM_PROGRAM && GET_OBJ_TYPE(obj) != ITEM_DECK_ACCESSORY && GET_OBJ_TYPE(obj) != ITEM_DESIGN)
 			{
-				send_to_char(ch, "You can't install %s^n into a cyberdeck.\r\n", GET_OBJ_NAME(obj));
+				send_to_char(ch, "You can't install %s^n into a cyberdeck or computer.\r\n", GET_OBJ_NAME(obj));
 				return;
 			}
 
@@ -781,6 +781,8 @@ ACMD(do_put)
 				send_to_char("Program designs are just conceptual outlines and can't be installed into cyberdecks.\r\n", ch);
 				return;
 			}
+
+      FAILURE_CASE_PRINTF(cont->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
 			perform_put_cyberdeck(ch, obj, cont);
 			return;
@@ -822,8 +824,10 @@ ACMD(do_put)
 				}
 				else if (GET_OBJ_TYPE(obj) != ITEM_PROGRAM)
 					send_to_char(ch, "%s is not a program!\r\n", GET_OBJ_NAME(obj));
-				else
+				else {
+          FAILURE_CASE_PRINTF(cont->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 					perform_put_cyberdeck(ch, obj, cont);
+        }
 			}
 		}
 		if (!found)

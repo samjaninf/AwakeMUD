@@ -5685,6 +5685,10 @@ ACMD(do_destroy)
 {
   struct obj_data *obj;
 
+  // Message sent in function.
+  if (ch_is_blocked_by_apartment_restrictions(ch))
+    return;
+
   if (!*argument) {
     send_to_char("Destroy which lodge, circle, object, or ritual component set?\r\n", ch);
     return;

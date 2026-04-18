@@ -9934,3 +9934,16 @@ bool gain_syspoints(struct char_data *ch, int amount, bool is_restricted, const 
 
   return true;
 }
+
+bool ch_is_blocked_by_apartment_restrictions(struct char_data *ch, bool send_message) {
+  if (!ch->in_room || !ch->in_room->apartment)
+    return false;
+  
+  if (ch->in_room->apartment->is_owner_or_guest_with_valid_lease(ch))
+    return false;
+
+  if (send_message)
+    send_to_char(ch, "You must be the owner or a registered guest to do that here.\r\n");
+  
+  return true;
+}

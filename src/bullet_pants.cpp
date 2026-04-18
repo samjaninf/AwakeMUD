@@ -117,7 +117,8 @@ ACMD(do_pockets) {
       // Otherwise, check to see if they've specified an item.
       if ((ammobox = get_obj_in_list_vis(ch, quantity_buf, ch->carrying))
            || (ch->in_room && (ammobox = get_obj_in_list_vis(ch, quantity_buf, ch->in_room->contents)))
-           || (ch->in_veh && (ammobox = get_obj_in_list_vis(ch, quantity_buf, ch->in_veh->contents)))) {
+           || (ch->in_veh && (ammobox = get_obj_in_list_vis(ch, quantity_buf, ch->in_veh->contents))))
+      {
         if (GET_OBJ_TYPE(ammobox) != ITEM_GUN_AMMO) {
           send_to_char(ch, "%s is not an ammo box.\r\n", capitalize(GET_OBJ_NAME(ammobox)));
           return;
@@ -127,6 +128,8 @@ ACMD(do_pockets) {
           send_to_char(ch, "%s is already empty.\r\n", capitalize(GET_OBJ_NAME(ammobox)));
           return;
         }
+
+        FAILURE_CASE_PRINTF(ammobox->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
         // Unfinished box.
         if (GET_AMMOBOX_INTENDED_QUANTITY(ammobox) > 0) {
@@ -294,6 +297,8 @@ ACMD(do_pockets) {
       send_to_char(ch, "You'll need to finish building %s first.\r\n", GET_OBJ_NAME(ammobox));
       return;
     }
+
+    FAILURE_CASE_PRINTF(ammobox->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
     // Deduct from the ammo box.
     update_ammobox_ammo_quantity(ammobox, -quantity, "box-to-pants pt 1");
@@ -815,6 +820,8 @@ bool ammobox_to_bulletpants(struct char_data *ch, struct obj_data *ammobox) {
       return FALSE;
     }
   }
+
+  FALSE_CASE_PRINTF(ammobox->in_room && ch_is_blocked_by_apartment_restrictions(ch, false), "You can't do that to things in offices you aren't a registered guest in.");
 
   update_bulletpants_ammo_quantity(ch, weapontype, ammotype, quantity);
   update_ammobox_ammo_quantity(ammobox, -quantity, "box-to-pants pt 2");

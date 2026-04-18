@@ -1212,6 +1212,11 @@ bool Apartment::can_enter(struct char_data *ch) {
     return FALSE;
   }
 
+  // Offices can be entered by anyone.
+  if (complex->is_office()) {
+    return true;
+  }
+
   // Check for owner status or pgroup perms.
   if (owned_by_pgroup) {
     // Not a member of any group, or member of wrong group.
@@ -1236,11 +1241,6 @@ bool Apartment::can_enter(struct char_data *ch) {
   for (auto guest_idnum : guests) {
     if (GET_IDNUM_EVEN_IF_PROJECTING(ch) == guest_idnum)
       return TRUE;
-  }
-
-  // Offices can be entered by anyone provided the owner is in there.
-  if (complex->is_office() && get_owner_if_present()) {
-    return true;
   }
 
   if (access_level(ch, LVL_BUILDER)) {

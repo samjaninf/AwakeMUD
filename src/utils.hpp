@@ -222,6 +222,7 @@ bool obj_contains_apartment_only_drop_items(struct obj_data *obj, struct room_da
 
 bool    ch_is_blocked_by_quest_protections(struct char_data *ch, struct obj_data *obj, bool requires_ch_to_be_in_same_room_as_questor, bool send_messages);
 bool    ch_is_blocked_by_quest_protections(struct char_data *ch, struct char_data *victim);
+bool    ch_is_blocked_by_apartment_restrictions(struct char_data *ch, bool send_message=true);
 
 const char * keyword_appears_in_obj(const char *keyword, struct obj_data *obj, bool search_keywords=1, bool search_name=1, bool search_desc=0);
 const char * keyword_appears_in_char(const char *keyword, struct char_data *ch, bool search_keywords=1, bool search_name=1, bool search_desc=0);

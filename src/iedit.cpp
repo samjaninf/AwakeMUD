@@ -2858,9 +2858,14 @@ void iedit_parse(struct descriptor_data * d, const char *arg)
       }
       GET_OBJ_VAL(d->edit_obj, 6) = number;
 
-      if (GET_OBJ_TYPE(OBJ) == ITEM_WEAPON && !WEAPON_IS_GUN(OBJ) && GET_WEAPON_FOCUS_RATING(OBJ) > MAX_WEAPON_FOCUS_RATING(OBJ)) {
-        send_to_char(CH, "Automatically adjusted focus rating down to maximum.\r\n");
-        GET_WEAPON_FOCUS_RATING(OBJ) = MAX_WEAPON_FOCUS_RATING(OBJ);
+      if (GET_OBJ_TYPE(OBJ) == ITEM_WEAPON && !WEAPON_IS_GUN(OBJ)) {
+        if (GET_WEAPON_FOCUS_RATING(OBJ) > MAX_WEAPON_FOCUS_RATING(OBJ)) {
+          send_to_char(CH, "Automatically adjusted focus rating down to maximum.\r\n");
+          GET_WEAPON_FOCUS_RATING(OBJ) = MAX_WEAPON_FOCUS_RATING(OBJ);
+        } else if (GET_WEAPON_FOCUS_RATING(OBJ) < 0) {
+          send_to_char(CH, "Negative focus ratings aren't allowed. Raised to zero.\r\n");
+          GET_WEAPON_FOCUS_RATING(OBJ) = 0;
+        }
       }
 
       iedit_disp_val8_menu(d);

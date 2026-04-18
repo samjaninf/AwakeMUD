@@ -919,7 +919,7 @@ void diag_char_to_char(struct char_data * i, struct char_data * ch)
 }
 
 const char *render_ware_for_viewer(struct obj_data *ware, bool privileged, bool force_full_name) {
-  static char render_buf[1000];
+  static char render_buf[1000] = {0};
 
   // Show its restring and what it was restrung from
   if (privileged && ware->restring) {
@@ -1141,10 +1141,8 @@ void look_at_char(struct char_data * i, struct char_data * ch, const char *used_
     }
   }
 
-  char internal_ware[MAX_STRING_LENGTH];
-  char visible_ware[MAX_STRING_LENGTH];
-  *internal_ware = '\0';
-  *visible_ware = '\0';
+  char internal_ware[MAX_STRING_LENGTH] = {0};
+  char visible_ware[MAX_STRING_LENGTH] = {0};
 
   bool ch_can_see_all_ware = (access_level(ch, LVL_FIXER) || (PRF_FLAGGED(i, PRF_HIRED) && PRF_FLAGGED(ch, PRF_QUESTOR)));
 
@@ -1202,6 +1200,7 @@ void look_at_char(struct char_data * i, struct char_data * ch, const char *used_
               && success_test(GET_INT(ch), 9) > 0)
           {
             strlcat(visible_ware, "Optical Magnification\r\n", sizeof(visible_ware));
+            continue;
           }
         }
         break;
@@ -2858,39 +2857,44 @@ ACMD(do_look)
   if (!ch->desc)
     return;
 
-  if (GET_POS(ch) < POS_SLEEPING)
-    send_to_char("You can't see anything but stars!\r\n", ch);
-  else if (!LIGHT_OK(ch)) {
-    send_to_char("It is pitch black...\r\n", ch);
-  } else {
+  FAILURE_CASE(GET_POS(ch) < POS_SLEEPING, "You can't see anything but stars!");
+  FAILURE_CASE(!LIGHT_OK(ch), "It is pitch black...");
+
+  {
     char *remainder = any_one_arg(argument, arg);
     skip_spaces(&remainder);
 
     if (subcmd == SCMD_READ) {
-      if (!*arg)
-        send_to_char("Read what?\r\n", ch);
-      else {
-        skip_spaces(&remainder);
-        look_at_target(ch, arg, remainder);
-      }
+      FAILURE_CASE(!*arg, "Read what?");
+      skip_spaces(&remainder);
+      look_at_target(ch, arg, remainder);
       return;
     }
-    if (!*arg)                  /* "look" alone, without an argument at all */
+
+    /* "look" alone, without an argument at all */
+    if (!*arg) {                 
       look_at_room(ch, 1, subcmd == SCMD_QUICKLOOK);
-    else if (is_abbrev(arg, "in"))
+      return;
+    }
+    
+    if (is_abbrev(arg, "in")) {
       look_in_obj(ch, remainder, FALSE);
+      return;
+    }
+
     /* did the char type 'look <direction>?' */
-    else if ((look_type = search_block(arg, lookdirs, FALSE)) >= 0 || (look_type = search_block(arg, fulllookdirs, FALSE)) >= 0)
+    if ((look_type = search_block(arg, lookdirs, FALSE)) >= 0 || (look_type = search_block(arg, fulllookdirs, FALSE)) >= 0) {
       look_in_direction(ch, convert_look[look_type]);
-    else if (is_abbrev(arg, "at"))
+      return;
+    }
+
+    if (is_abbrev(arg, "at")) {
       do_examine(ch, remainder, 0, SCMD_EXAMINE);
-    else
-      do_examine(ch, argument, 0, SCMD_EXAMINE);
-    /* else if (is_abbrev(arg, "at"))
-      look_at_target(ch, remainder); // todo split remainder again to get token
-    else
-      look_at_target(ch, arg);
-      */
+      return;
+    }
+    
+    // Finally, just hand it off to do_examine.
+    do_examine(ch, argument, 0, SCMD_EXAMINE);
   }
 }
 
@@ -4142,13 +4146,12 @@ ACMD(do_examine)
   
   char *remainder = any_one_arg(argument, arg);
 
-  if (!*arg) {
-    send_to_char("Examine what?\r\n", ch);
-    return;
-  }
+  FAILURE_CASE(!*arg, "Examine what?");
+  
   if (subcmd == SCMD_EXAMINE) {
     skip_spaces(&remainder);
     look_at_target(ch, arg, remainder);
+    return;
   }
 
   if (!ch->in_veh || (ch->in_veh && !ch->vfront))

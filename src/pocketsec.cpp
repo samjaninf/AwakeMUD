@@ -752,6 +752,10 @@ void pocketsec_parse(struct descriptor_data *d, char *arg)
       if ((x = get_player_id(buf)) < 0) {
         send_to_char("There is no such player.\r\n", CH);
         pocketsec_mailmenu(d);
+      } else if (get_player_rank(x) >= LVL_BUILDER) {
+        send_to_char(CH, "^WYou can't write in-game mail to staff.^n Please file a support ticket on Discord (%s). If you don't use Discord, you may email your message to %s.\r\n",
+                     DISCORD_SERVER_URL,
+                     STAFF_CONTACT_EMAIL);
       } else {
         send_to_char("Write your message. Use @ on a new line to finish.\r\n", CH);
         PLR_FLAGS(CH).SetBits(PLR_MAILING, PLR_WRITING, ENDBIT);

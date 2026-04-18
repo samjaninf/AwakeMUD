@@ -1173,6 +1173,29 @@ void Apartment::break_lease() {
   save_lease();
 }
 
+// Search all rooms in this apartment to determine if the owner is present. Note: returns projections.
+struct char_data * Apartment::get_owner_if_present() {
+  if (owned_by_player) {
+    for (auto &subroom : rooms) {
+      struct room_data *room = subroom->get_world_room();
+
+      if (!room) {
+        mudlog_vfprintf(NULL, LOG_SYSLOG, "SYSERR: Failed to get_world_room() for subroom %ld of %s!", subroom->get_vnum(), get_full_name());
+        continue;
+      }
+      for (struct char_data *occupant = room->people; occupant; occupant = occupant->next_in_room) {
+        if (GET_IDNUM_EVEN_IF_PROJECTING(occupant) == owned_by_player) {
+          return occupant;
+        }
+      }
+    }
+  } else {
+    // TODO: Logic for owned_by_pgroup. Will return the first valid leaseholder.
+  }
+
+  return nullptr;
+}
+
 /* Check for entry permissions. */
 bool Apartment::can_enter(struct char_data *ch) {
   // NPC, but not a spirit or elemental? No entry.
@@ -1188,10 +1211,6 @@ bool Apartment::can_enter(struct char_data *ch) {
     }
     return FALSE;
   }
-
-  // Offices can be entered by anyone.
-  if (complex->is_office())
-    return TRUE;
 
   // Check for owner status or pgroup perms.
   if (owned_by_pgroup) {
@@ -1217,6 +1236,11 @@ bool Apartment::can_enter(struct char_data *ch) {
   for (auto guest_idnum : guests) {
     if (GET_IDNUM_EVEN_IF_PROJECTING(ch) == guest_idnum)
       return TRUE;
+  }
+
+  // Offices can be entered by anyone provided the owner is in there.
+  if (complex->is_office() && get_owner_if_present()) {
+    return true;
   }
 
   if (access_level(ch, LVL_BUILDER)) {

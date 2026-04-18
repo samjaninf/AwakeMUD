@@ -223,6 +223,7 @@ class Apartment {
     bool has_owner_privs(struct char_data *ch);
     bool has_owner_privs_by_idnum(idnum_t idnum);
     bool has_owner() { return owned_by_pgroup || owned_by_player; }
+    struct char_data * get_owner_if_present();
     idnum_t get_owner_id();
     Playergroup *get_owner_pgroup() { return owned_by_pgroup; }
     bool owner_is_valid();

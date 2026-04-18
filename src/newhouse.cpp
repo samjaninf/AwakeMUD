@@ -1179,13 +1179,15 @@ bool Apartment::can_enter(struct char_data *ch) {
   if (IS_NPC(ch) && !(IS_SPIRIT(ch) || IS_PC_CONJURED_ELEMENTAL(ch)))
     return FALSE;
 
-  // Admins and astral projections can enter any room.
-  if (GET_LEVEL(ch) >= LVL_ADMIN || IS_ASTRAL(ch))
-    return TRUE;
-
   // The lease must be paid up for guest / owner status to work. Fine if it's not leased though.
-  if ((owned_by_pgroup || owned_by_player) && get_paid_until() < time(0))
-    return access_level(ch, LVL_BUILDER);
+  if ((owned_by_pgroup || owned_by_player) && get_paid_until() < time(0)) {
+    if (access_level(ch, LVL_BUILDER)) {
+      send_to_char("(OOC: Entry to expired apartment allowed via automatic staff override. Please add a ^WCHEATLOG^n entry.)\r\n", ch);
+      mudlog_vfprintf(ch, LOG_WIZLOG, "%s entering expired-lease apartment via automatic staff override.", GET_CHAR_NAME(ch));
+      return TRUE;
+    }
+    return FALSE;
+  }
 
   // Offices can be entered by anyone.
   if (complex->is_office())
@@ -1202,7 +1204,7 @@ bool Apartment::can_enter(struct char_data *ch) {
     }
     // Owned by a pgroup, but this ch does not have perms in it: Fall through.
   } else if (owned_by_player > 0) {
-    if (GET_IDNUM(ch) == owned_by_player)
+    if (GET_IDNUM_EVEN_IF_PROJECTING(ch) == owned_by_player)
       return TRUE;
     // Owned by a player, but not this one: Fall through.
   } else {
@@ -1213,16 +1215,15 @@ bool Apartment::can_enter(struct char_data *ch) {
 
   // Guests can enter any room.
   for (auto guest_idnum : guests) {
-    if (GET_IDNUM(ch) == guest_idnum)
+    if (GET_IDNUM_EVEN_IF_PROJECTING(ch) == guest_idnum)
       return TRUE;
   }
 
-#ifdef IS_BUILDPORT
-  if (GET_LEVEL(ch) >= LVL_BUILDER) {
-    send_to_char("(OOC: Entry allowed via staff override.)\r\n", ch);
+  if (access_level(ch, LVL_BUILDER)) {
+    send_to_char("(OOC: Entry allowed via automatic staff override. Please add a ^WCHEATLOG^n entry.)\r\n", ch);
+    mudlog_vfprintf(ch, LOG_WIZLOG, "%s entering apartment via automatic staff override.", GET_CHAR_NAME(ch));
     return TRUE;
   }
-#endif
 
   return FALSE;
 }

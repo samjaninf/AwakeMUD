@@ -2721,6 +2721,10 @@ void extract_obj(struct obj_data * obj, bool dont_warn_on_kept_items)
   struct phone_data *phone, *temp;
   bool set = FALSE;
 
+  struct obj_data *superobj = obj;
+  while (superobj->in_obj)
+    superobj = superobj->in_obj;
+
   if (IS_OBJ_STAT(obj, ITEM_EXTRA_KEPT) && !dont_warn_on_kept_items) {
     const char *representation = generate_new_loggable_representation(obj);
     mudlog_vfprintf(NULL, LOG_PURGELOG, "extract_obj: Destroying KEPT item: %s", representation);
@@ -2759,6 +2763,19 @@ void extract_obj(struct obj_data * obj, bool dont_warn_on_kept_items)
   } else if (GET_OBJ_TYPE(obj) == ITEM_PART) {
     // We're a part, make sure we're not pointing to a deck.
     clear_cyberdeck_part_pointer(obj);
+  }
+
+  // If we're in a room or vehicle, make sure nobody there is working on us.
+  if (superobj->in_room || superobj->in_veh) {
+    for (struct char_data *ch = superobj->in_room ? superobj->in_room->people : superobj->in_veh->people;
+         ch;
+         ch = superobj->in_room ? ch->next_in_room : ch->next_in_veh)
+    {
+      if (GET_BUILDING(ch) == obj) {
+        send_to_char(ch, "You stop working.\r\n");
+        STOP_WORKING(ch);
+      }
+    }
   }
 
   obj->dropped_by_char = 0;

@@ -8179,7 +8179,7 @@ void display_room_name(struct char_data *ch, struct room_data *in_room, bool in_
       if (GET_APARTMENT(in_room)) {
         snprintf(ENDOF(room_title_buf), sizeof(room_title_buf) - strlen(room_title_buf), "\r\n ^c(%s%s - %s^c%s)",
                     GET_APARTMENT(in_room)->get_paid_until() > 0 ? "Leased " : "",
-                    GET_APARTMENT(in_room)->get_complex()->is_office() ? "Office" : "Apartment",
+                    GET_APARTMENT(in_room)->is_office() ? "Office" : "Apartment",
                     GET_APARTMENT(in_room)->get_full_name(),
                     GET_APARTMENT_DECORATION(in_room) ? " [decorated]" : "");
       }
@@ -8199,7 +8199,7 @@ void display_room_name(struct char_data *ch, struct room_data *in_room, bool in_
       APPEND_ROOM_FLAG(ROOM_FLAGGED(in_room, ROOM_GARAGE), " (Garage)");
       APPEND_ROOM_FLAG(ROOM_FLAGGED(in_room, ROOM_STORAGE) && !ROOM_FLAGGED(in_room, ROOM_CORPSE_SAVE_HACK), " (Storage)");
       if (GET_APARTMENT(in_room)) {
-        if (GET_APARTMENT(in_room)->get_complex()->is_office()) {
+        if (GET_APARTMENT(in_room)->is_office()) {
           strlcat(room_title_buf, " (Office)", sizeof(room_title_buf));
         } else {
           snprintf(ENDOF(room_title_buf), sizeof(room_title_buf) - strlen(room_title_buf), " (%s-Class Apartment)",

@@ -41,7 +41,7 @@ extern SPECIAL(landlord_spec);
 
 #define MIN_LEVEL_TO_IGNORE_HOUSEEDIT_EDITOR_STATUS  LVL_ADMIN
 
-#define CPLX_IS_OFFICE 0
+#define APARTMENT_IS_OFFICE 0
 
 /* An ApartmentComplex is composed of N Apartments, and has tracking data for landlord info. */
 class ApartmentComplex {
@@ -71,8 +71,7 @@ class ApartmentComplex {
     std::vector<const char *> garage_strings_gendered = {};
 
     // Flags to control complex behavior.
-    Bitfield flags;
-
+    Bitfield complex_flags;
   public:
     // Given a filename to read from, instantiate an apartment complex.
     ApartmentComplex(bf::path filename);
@@ -87,7 +86,6 @@ class ApartmentComplex {
     std::vector<idnum_t> get_editors() { return editors; }
     bf::path get_base_directory() { return base_directory; }
     int get_lifestyle() { return lifestyle; }
-    bool is_office() { return flags.IsSet(CPLX_IS_OFFICE); }
 
     // Mutators.
     bool set_landlord_vnum(vnum_t vnum, bool perform_landlord_overlap_test);
@@ -98,7 +96,6 @@ class ApartmentComplex {
     void set_base_directory(bf::path path) { base_directory = path; }
     void add_apartment(Apartment *apartment);
     void remove_apartment(Apartment *apartment);
-    void set_office_status(bool status) { if (status) { flags.SetBit(CPLX_IS_OFFICE); } else { flags.RemoveBit(CPLX_IS_OFFICE); } }
 
     // Clone our data from the provided complex.
     void clone_from(ApartmentComplex *, const char *invoker);
@@ -159,6 +156,9 @@ class Apartment {
     std::vector<const char *> garage_strings_neutral = {};
     std::vector<const char *> garage_strings_gendered = {};
 
+    // Flags to control complex behavior.
+    Bitfield apartment_flags;
+
   public:
     // Is this just an editing struct?
     bool is_editing_struct = FALSE;
@@ -185,6 +185,9 @@ class Apartment {
     bool get_garage_override() { return garage_override; }
     std::vector<const char *> *get_custom_lifestyle_strings(struct char_data *ch);
     void cleanup_deleted_guests();
+
+    bool is_office() { return apartment_flags.IsSet(APARTMENT_IS_OFFICE); }
+    void set_office_status(bool status) { if (status) { apartment_flags.SetBit(APARTMENT_IS_OFFICE); } else { apartment_flags.RemoveBit(APARTMENT_IS_OFFICE); } }
 
     // Mutators
     void set_owner(idnum_t);

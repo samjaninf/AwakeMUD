@@ -903,7 +903,7 @@ bool can_take_obj_from_anywhere(struct char_data *ch, struct obj_data *obj)
   while (superobj->in_obj) superobj = superobj->in_obj;
 
   // If it's an office, only the owner can take things regardless of arranged status.
-  if (superobj->in_room && GET_APARTMENT(superobj->in_room) && GET_APARTMENT(superobj->in_room)->get_complex()->is_office()) {
+  if (superobj->in_room && GET_APARTMENT(superobj->in_room) && GET_APARTMENT(superobj->in_room)->is_office()) {
     if (GET_APARTMENT(superobj->in_room)->has_owner_privs(ch)) {
       // allowed - fall through
     } else if (access_level(ch, LVL_ADMIN)) {
@@ -1455,7 +1455,7 @@ bool can_take_obj_from_room(struct char_data *ch, struct obj_data *obj)
   while (superobj->in_obj) superobj = superobj->in_obj;
 
   // If it's an office, only the owner can take things regardless of arranged status.
-  if (superobj->in_room && GET_APARTMENT(superobj->in_room) && GET_APARTMENT(superobj->in_room)->get_complex()->is_office()) {
+  if (superobj->in_room && GET_APARTMENT(superobj->in_room) && GET_APARTMENT(superobj->in_room)->is_office()) {
     if (GET_APARTMENT(superobj->in_room)->has_owner_privs(ch)) {
       // allowed - fall through
     } else if (access_level(ch, LVL_ADMIN)) {

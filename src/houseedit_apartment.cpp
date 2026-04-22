@@ -191,6 +191,8 @@ void houseedit_display_apartment_edit_menu(struct descriptor_data *d) {
   send_to_char(CH, "\r\n");
   send_to_char(CH, "8) Rooms:\r\n%s^n\r\n", room_string);
   send_to_char(CH, "\r\n");
+  send_to_char(CH, "9) Is Office:      %s\r\n", APT->is_office() ? "^cYes^n" : "No");
+  send_to_char(CH, "\r\n");
   send_to_char(CH, "q) Quit and Save\r\n");
   send_to_char(CH, "x) Quit Without Saving\r\n");
   send_to_char(CH, "\r\n");
@@ -229,10 +231,15 @@ void houseedit_apartment_parse(struct descriptor_data *d, const char *arg) {
           d->edit_mode = HOUSEEDIT_APARTMENT_ATRIUM;
           break;
         case '4': // lifestyle
-          for (int lifestyle_idx = 0; lifestyle_idx < NUM_LIFESTYLES; lifestyle_idx++)
-            send_to_char(CH, "%d) %s\r\n", lifestyle_idx, lifestyles[lifestyle_idx].name);
-          send_to_char("\r\nEnter the new lifestyle rating: ", CH);
-          d->edit_mode = HOUSEEDIT_APARTMENT_LIFESTYLE;
+          if (APT->is_office()) {
+            send_to_char("Offices are locked to Squatter lifestyle.\r\n", CH);
+            houseedit_display_apartment_edit_menu(d);
+          } else {
+            for (int lifestyle_idx = 0; lifestyle_idx < NUM_LIFESTYLES; lifestyle_idx++)
+              send_to_char(CH, "%d) %s\r\n", lifestyle_idx, lifestyles[lifestyle_idx].name);
+            send_to_char("\r\nEnter the new lifestyle rating: ", CH);
+            d->edit_mode = HOUSEEDIT_APARTMENT_LIFESTYLE;
+          }
           break;
         case '5': // rent
           if (APT->get_lifestyle() < NUM_LIFESTYLES - 1) {
@@ -252,6 +259,16 @@ void houseedit_apartment_parse(struct descriptor_data *d, const char *arg) {
           break;
         case '8': // rooms
           houseedit_display_room_edit_menu(d);
+          break;
+        case '9': // office status
+          APT->set_office_status(!APT->is_office());
+          if (APT->is_office() && APT->get_lifestyle() != LIFESTYLE_SQUATTER) {
+            APT->set_lifestyle(LIFESTYLE_SQUATTER);
+            send_to_char(CH, "Toggled. Lifestyle has been forced to Squatter.\r\n");
+          } else {
+            send_to_char(CH, "Toggled.\r\n");
+          }
+          houseedit_display_apartment_edit_menu(d);
           break;
         case 'q': // quit and save
         case 'x': // quit, no save

@@ -280,7 +280,7 @@ void houseedit_apartment_parse(struct descriptor_data *d, const char *arg) {
 
             send_to_char("OK, saving changes.\r\n", CH);
 
-            if (APT->get_rent_cost() < lifestyles[APT->get_lifestyle()].monthly_cost_min) {
+            if (!APT->is_office() && (APT->get_rent_cost() < lifestyles[APT->get_lifestyle()].monthly_cost_min)) {
               send_to_char(CH, "Rent is too low, so raising it to %ld.\r\n", lifestyles[APT->get_lifestyle()].monthly_cost_min);
               APT->set_rent(lifestyles[APT->get_lifestyle()].monthly_cost_min);
             }

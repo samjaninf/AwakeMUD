@@ -336,7 +336,7 @@ ApartmentComplex::ApartmentComplex(bf::path filename) :
     log_vfprintf(" -- Loaded apartment complex %s with landlord %ld.", display_name, landlord_vnum);
   }
 
-  // Load rooms
+  // Load apartments
   {
     bf::directory_iterator end_itr; // default construction yields past-the-end
     for (bf::directory_iterator itr(base_directory); itr != end_itr; ++itr) {
@@ -1663,6 +1663,10 @@ void Apartment::set_complex(ApartmentComplex *new_complex) {
 }
 
 void Apartment::clamp_rent(struct char_data *ch) {
+  // Offices are exempt.
+  if (is_office())
+    return;
+
   // Clamp the rent to the lifestyle's band.
   int lifestyle = get_lifestyle();
   long minimum = lifestyles[lifestyle].monthly_cost_min;

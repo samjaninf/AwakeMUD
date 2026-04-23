@@ -214,6 +214,7 @@ void assign_rooms(void);
 void assign_shopkeepers(void);
 void assign_johnsons(void);
 void randomize_shop_prices(void);
+bool zone_is_empty(int zone_nr);
 void reset_zone(rnum_t zone, int reboot, bool process_doors=true);
 int file_to_string(const char *name, char *buf, size_t buf_size);
 int file_to_string_alloc(const char *name, char **buf);
@@ -4748,7 +4749,12 @@ void zone_update(void)
       if (zone_table[i].age >= MAX(zone_table[i].lifespan, 5)
           && zone_table[i].age < ZO_DEAD
           && zone_table[i].reset_mode
-          && (zone_table[i].reset_mode == ZONE_RESET_ALWAYS || zone_table[i].players_in_zone == 0))
+#ifdef USE_ZONE_HOTLOADING
+          && (zone_table[i].reset_mode == ZONE_RESET_ALWAYS || zone_table[i].players_in_zone == 0)
+#else
+          && (zone_table[i].reset_mode == ZONE_RESET_ALWAYS || zone_is_empty(i))
+#endif
+          )
       {
         reset_zone(i, 0);
       }
@@ -5562,6 +5568,26 @@ void reset_zone(rnum_t zone, int reboot, bool process_doors)
     }
   }
 
+}
+
+bool zone_is_empty(int zone_nr)
+{
+  struct room_data *room;
+  for (struct descriptor_data *i = descriptor_list; i; i = i->next) {
+    if (!i->connected && i->character && i->character->char_specials.timer < IDLE_TIMER_ZONE_RESET_THRESHOLD) {
+      room = get_ch_in_room(i->character);
+      if (room && room->zone == zone_nr) {
+        return 0;
+      }
+    }
+    if (!i->connected && i->original && i->original->char_specials.timer < IDLE_TIMER_ZONE_RESET_THRESHOLD) {
+      room = get_ch_in_room(i->original);
+      if (room && room->zone == zone_nr) {
+        return 0;
+      }
+    }
+  }
+  return 1;
 }
 
 

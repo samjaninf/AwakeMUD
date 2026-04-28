@@ -50,7 +50,7 @@ int alert_player_doctors_of_mort(struct char_data *ch, struct obj_data *docwagon
   const char *location_info;
 
   if (!ch || !(in_room = get_ch_in_room(ch))) {
-    mudlog("SYSERR: NULL or missing char to alert_player_doctors_of_mort()!", ch, LOG_SYSLOG, TRUE);
+    mudlog_vfprintf(ch, LOG_SYSLOG, "SYSERR: null or roomless char to alert_player_doctors_of_mort(%s)!", GET_CHAR_NAME(ch));
     return 0;
   }
 
@@ -59,7 +59,7 @@ int alert_player_doctors_of_mort(struct char_data *ch, struct obj_data *docwagon
     return 0;
 
   // Skip newbies. They have no death penalty.
-  if (PLR_FLAGGED(ch, PLR_NEWBIE))
+  if (PLR_FLAGGED(ch, PLR_NEWBIE) && !PRF_FLAGGED(ch, PRF_HARDCORE))
     return 0;
 
   // They don't want to participate-- not an error, just bail.

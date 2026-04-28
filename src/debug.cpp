@@ -187,10 +187,10 @@ char _discord_smallimage[100] = {0};
 char _discord_smallimagetext[200] = {0};
 
 void derpify(const char *phrase, std::initializer_list<const char *> fill_words, struct char_data *ch) {
-  std::optional<std::vector<const char *>> argparse(const char *input, char *scratchpad, size_t scratchpad_size, std::initializer_list<const char *> fill_words, struct char_data *ch);
+  std::optional<std::vector<const char *>> argparse(const char *input, std::initializer_list<const char *> fill_words, struct char_data *ch);
 
   send_to_char(ch, "'%s' yields {", phrase);
-  std::optional<std::vector<const char *>> result = argparse(phrase, buf, sizeof(buf), fill_words, ch);
+  std::optional<std::vector<const char *>> result = argparse(phrase, fill_words, ch);
   if (result) {
     for (auto x : *result) {
       send_to_char(ch, "'%s', ", x);

@@ -2453,15 +2453,17 @@ Is relatively smart about fill words: accepts abbreviations of them UNLESS there
 Requires a zero-terminated input string.
 
 */
-std::optional<std::vector<const char *>> argparse(const char *input, char *scratchpad, size_t scratchpad_size, std::initializer_list<const char *> fill_words, struct char_data *ch) {
-  if (strlen(input) >= scratchpad_size) {
-    mudlog_vfprintf(NULL, LOG_SYSLOG, "SYSERR: argparse() called with input length larger than scratchpad size (%ld >= %ld)", strlen(input), scratchpad_size);
+std::optional<std::vector<const char *>> argparse(const char *input, std::initializer_list<const char *> fill_words, struct char_data *ch) {
+  static char scratchpad[MAX_INPUT_LENGTH * 2];
+  std::vector<const char *> tokens = {};
+
+  if (strlen(input) >= sizeof(scratchpad)) {
+    mudlog_vfprintf(NULL, LOG_SYSLOG, "SYSERR: argparse() called with input length larger than scratchpad size (%ld >= %ld)", strlen(input), sizeof(scratchpad));
     send_to_char(ch, "A system error occurred during argument parsing. Please do not re-attempt. Staff have been notified of the bug.\r\n");
     return std::nullopt;
   }
 
-  std::vector<const char *> tokens = {};
-  strlcpy(scratchpad, input, scratchpad_size);
+  strlcpy(scratchpad, input, sizeof(scratchpad));
   
   // Fill our list with all words in the input, separated by quotes or spaces.
   {

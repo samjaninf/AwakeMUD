@@ -202,7 +202,11 @@ ACMD(do_sneak)
 
   FAILURE_CASE(GET_POS(ch) != POS_STANDING, "You must be standing to sneak.");
 
-  send_to_char("You begin to move with stealth.\r\n", ch);
+  if (AFF_FLAGGED(ch, AFF_LEVITATE) && !number(0, 10000)) {
+    send_to_char("You realize you've been making whooshing noises with your mouth while levitating around, so you concentrate on not doing that for a while.\r\n", ch);
+  } else {
+    send_to_char("You begin to move with stealth.\r\n", ch);
+  }
   AFF_FLAGS(ch).SetBit(AFF_SNEAK);
 }
 

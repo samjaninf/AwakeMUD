@@ -42,6 +42,7 @@ extern void Storage_save(const char *file_name, struct room_data *room);
 extern bool player_is_dead_hardcore(long id);
 extern bool House_load_storage(struct room_data *world_room, const char *filename);
 extern bool at_least_one_word_in_keyword_list_exists_in_str(const char *keywords, const char *str);
+extern void reset_zone(rnum_t zone, int reboot, bool process_doors);
 
 SPECIAL(landlord_spec);
 
@@ -1317,11 +1318,26 @@ bool Apartment::create_or_extend_lease(struct char_data *ch) {
   struct obj_data *neophyte_card = NULL;
   int cost = nuyen_per_month;
 
-  // Special case: Offices max out at 30 days of lease time to encourage turnover.
-  if (is_office() && paid_until > time(0) + (SECS_PER_REAL_DAY * 30)) {
-    send_to_char(ch, "To encourage active use, public spaces like this can only be paid when they're at 29 days of remaining lease or lower.\r\n");
-    return false;
+  if (is_office()) {
+    // Special case: Offices max out at 30 days of lease time to encourage turnover.
+    if (paid_until > time(0) + (SECS_PER_REAL_DAY * 30)) {
+      send_to_char(ch, "To encourage active use, public spaces like this can only be paid when they're at 29 days of remaining lease or lower.\r\n");
+      return false;
+    }
+
+    // Special case: You can't lease a sterile-room office if you're not a playerdoc.
+    if (!PLR_FLAGGED(ch, PLR_CYBERDOC)) {
+      for (auto room : rooms) {
+        struct room_data *world_room = room->get_world_room();
+        if (world_room && ROOM_FLAGGED(world_room, ROOM_STERILE)) {
+          send_to_char(ch, "Sorry, only characters flagged as cyberdocs can lease offices with sterile rooms.\r\n");
+          return false;
+        }
+      }
+    }
   }
+  
+  
 
   // Special case: The apartment has already been leased and has expired.
   // You must pay the cost in arrears for the room, PLUS the new month.
@@ -1414,7 +1430,7 @@ bool Apartment::create_or_extend_lease(struct char_data *ch) {
         }
 
         if (room->people || room->contents || room->vehicles) {
-          mudlog_vfprintf(ch, LOG_SYSLOG, "SYSERR: %s did not have break_lease() run on it correctly! Running break_lease(). (ppl %s, obj %s, veh %s)",
+          mudlog_vfprintf(ch, LOG_SYSLOG, "SYSERR: %s may not have had break_lease() run on it correctly! Running break_lease(). (ppl %s, obj %s, veh %s)",
                           get_full_name(),
                           room->people ? "Y" : "N",
                           room->contents ? "Y" : "N",
@@ -1428,6 +1444,12 @@ bool Apartment::create_or_extend_lease(struct char_data *ch) {
 
     owned_by_player = GET_IDNUM(ch);
     paid_until = time(0) + (SECS_PER_REAL_DAY*30);
+
+    // new office lease? reset the zone
+    if (is_office() && !rooms.empty()) {
+      mudlog_vfprintf(ch, LOG_SYSLOG, "Resetting office due to new lease potentially wiping out zoneloaded contents.");
+      reset_zone(get_zone_from_vnum(rooms.at(0)->get_vnum())->number, 0, false);
+    }
   } 
   // Arrears extension requires setting a new lease timeout.
   else if (get_days_in_arrears() > 0) {

@@ -664,14 +664,13 @@ const char *ApartmentComplex::list_apartments__returns_new() {
   }
 
   for (auto &apartment: apartments) {
-    snprintf(ENDOF(result), sizeof(result) + strlen(result), "  - ^C%s^n @ ^c%ld^n (lifestyle ^c%s^n, ^c%ld^n room%s, of which ^c%ld^n %s): ^c%ld^n nuyen.\r\n",
+    snprintf(ENDOF(result), sizeof(result) + strlen(result), "  - ^C%s^n @ ^c%ld^n (lifestyle ^c%s^n, ^c%ld^n room%s, %s): ^c%ld^n nuyen.\r\n",
              apartment->name,
              apartment->rooms.empty() ? -1 : apartment->rooms.front()->get_vnum(),
              lifestyles[apartment->get_lifestyle()].name,
              apartment->rooms.size(),
              apartment->rooms.size() == 1 ? "" : "s",
-             apartment->garages,
-             apartment->garages == 1 ? "is a garage" : "are garages",
+             apartment->is_garage_lifestyle() ? (apartment->get_garage_override() ? "forced garage" : "majority garage") : "standard apt",
              apartment->get_rent_cost());
   }
 
@@ -991,7 +990,7 @@ idnum_t Apartment::get_owner_id() {
 }
 
 bool Apartment::is_garage_lifestyle() {
-  return garage_override || garages > (rooms.size() + 1) / 2;
+  return garage_override || garages == rooms.size() || garages > (rooms.size() + 1) / 2;
 }
 
 void Apartment::set_base_directory(bf::path new_base) {

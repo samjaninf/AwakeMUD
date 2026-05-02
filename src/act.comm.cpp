@@ -294,9 +294,20 @@ ACMD(do_exclaim)
   ch->char_specials.last_social_action = LAST_SOCIAL_ACTION_REQUIREMENT_FOR_CONGREGATION_BONUS - SOCIAL_ACTION_GRACE_PERIOD_GRANTED_BY_SPEECH;
 }
 
+#ifdef LOG_COMMANDS
+extern void write_command_log(struct char_data *ch, const char *message);
+#endif
+
 void perform_tell(struct char_data *ch, struct char_data *vict, char *arg)
 {
   delete_doubledollar(arg);
+
+#ifdef LOG_COMMANDS
+  // Log it here instead of in interpreter so we can attach context (you can send tells to aliases that are hard to parse after the fact)
+  char command_log_buf[MAX_INPUT_LENGTH * 3];
+  snprintf(command_log_buf, sizeof(command_log_buf), "tell %s %s", GET_CHAR_NAME(vict), arg);
+  write_command_log(ch, command_log_buf);
+#endif
 
   snprintf(buf, sizeof(buf), "^c%s%s^c tells you ^mOOCly^c, '%s^c'^n\r\n",
            GET_CHAR_NAME(ch),
@@ -330,59 +341,36 @@ ACMD(do_tell)
 
   half_chop(argument, buf, buf2, sizeof(buf2));
 
-  if (!*buf || !*buf2) {
-    send_to_char("Who do you wish to tell what??\r\n", ch);
-    return;
-  }
+  FAILURE_CASE(!*buf || !*buf2, "Syntax: TELL <name> <message>, e.g. TELL LUCIEN Hello!");
 
-  // If they trigger automod with this, bail out.
+  // If they trigger automod with this, bail out. Message is sent in function.
   if (check_for_banned_content(buf2, ch))
     return;
 
-  if (!(vict = get_player_vis(ch, buf, 0))) {
-    send_to_char(ch, "You don't see anyone named '%s' here.\r\n", buf);
-    return;
-  }
+  FAILURE_CASE_PRINTF(!(vict = get_player_vis(ch, buf, 0)), "You don't see anyone named '%s' here.", buf);
 
-  if ((PLR_FLAGGED(ch, PLR_NOSHOUT) || PLR_FLAGGED(ch, PLR_TELLS_MUTED)) && !IS_SENATOR(vict)) {
-    send_to_char(ch, "You can only send tells to staff.\r\n");
-    return;
-  }
+  // If you've been abusing tells, you are limited to only contacting staff.
+  FAILURE_CASE((PLR_FLAGGED(ch, PLR_NOSHOUT) || PLR_FLAGGED(ch, PLR_TELLS_MUTED)) && !IS_SENATOR(vict), "You can only send tells to staff.");
 
-  if (!IS_NPC(vict) && !vict->desc) {      /* linkless */
-    act("$E's linkless at the moment.", FALSE, ch, 0, vict, TO_CHAR);
-    return;
-  }
+  FAILURE_CASE_PRINTF(!IS_NPC(vict) && !vict->desc, "%s %s linkless at the moment.", HSSH(vict), ISARE(vict));
 
   // Prevent chargen reaching people with tells.
-  if (PLR_FLAGGED(ch, PLR_NOT_YET_AUTHED) && !IS_SENATOR(vict)) {
-    send_to_char("You'll need to finish the tutorial to send tells to other players.\r\n", ch);
-    return;
-  }
+  FAILURE_CASE(PLR_FLAGGED(ch, PLR_NOT_YET_AUTHED) && !IS_SENATOR(vict), "You'll need to finish the tutorial to send tells to other players.");
 
   // Prevent people reaching chargen with tells.
-  if (PLR_FLAGGED(vict, PLR_NOT_YET_AUTHED) && !IS_SENATOR(ch)) {
-    send_to_char("You can't send tells to them until they finish character creation.\r\n", ch);
-    return;
-  }
+  FAILURE_CASE(PLR_FLAGGED(vict, PLR_NOT_YET_AUTHED) && !IS_SENATOR(ch), "You can't send tells to them until they finish character creation.");
 
-  if (IS_IGNORING(ch, is_blocking_tells_from, vict)) {
-    send_to_char("You can't send tells to someone you're blocking tells from.\r\n"
-                 "(Please note that disabling your block, sending a tell, and immediately re-enabling it will be considered abuse.)\r\n", ch);
-    return;
-  }
+  FAILURE_CASE(IS_IGNORING(ch, is_blocking_tells_from, vict), 
+               "You can't send tells to someone you're blocking tells from.\r\n"
+               "(Please note that disabling your block, sending a tell, and immediately re-enabling it will be considered abuse.)");
 
   // Enable blocking of tells from everyone except staff.
-  if ((!access_level(ch, LVL_BUILDER) && PRF_FLAGGED(vict, PRF_NOTELL)) || IS_IGNORING(vict, is_blocking_tells_from, ch)) {
-    act("$E has disabled tells.", FALSE, ch, 0, vict, TO_CHAR);
-    return;
-  }
+  FAILURE_CASE_PRINTF(!access_level(ch, LVL_BUILDER) && (PRF_FLAGGED(vict, PRF_NOTELL)) || IS_IGNORING(vict, is_blocking_tells_from, ch),
+                      "%s has disabled tells.", HSSH(vict));
 
-  else if (PLR_FLAGGED(vict, PLR_EDITING)) {
-    act("$E's editing right now, try again later.", FALSE, ch, 0, vict, TO_CHAR);
-    return;
-  }
+  FAILURE_CASE_PRINTF(PLR_FLAGGED(vict, PLR_EDITING), "%s %s editing right now, try again later.", HSSH(vict), ISARE(vict));
 
+  // Not a failure case, just a heads-up.
   if (PRF_FLAGGED(vict, PRF_AFK)) {
     act("$E's AFK, so your message may be missed.", FALSE, ch, 0, vict, TO_CHAR);
   }

@@ -2993,7 +2993,8 @@ void cedit_parse(struct descriptor_data *d, char *arg)
     cedit_disp_menu(d, 0);
     break;
   case CEDIT_ALIAS:
-    if (strlen(arg) >= MAX_KEYWORDS_LEN || get_string_length_after_color_code_removal(arg, CH) >= LINE_LENGTH || strlen(arg) < 5) {
+    if (strlen(arg) >= MAX_KEYWORDS_LEN || get_string_length_after_color_code_removal(arg, CH) >= LINE_LENGTH || strlen(arg) < 5 || strlen(prepare_quotes(buf3, arg, sizeof(buf3), false, false)) >= MAX_KEYWORDS_LEN) {
+      send_to_char(d->character, "Line too long.\r\n");
       cedit_disp_menu(d, 1);
       return;
     }

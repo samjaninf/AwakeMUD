@@ -93,6 +93,7 @@ extern void initialize_policy_tree();
 extern void initialize_traffic_msgs();
 extern void migrate_pocket_secretaries_in_database();
 extern void attempt_to_offload_unused_zones();
+extern void boot_logging_regexes();
 
 extern void auto_repair_obj(struct obj_data *obj, idnum_t owner);
 
@@ -578,6 +579,11 @@ void boot_world(void)
 #ifdef CRYPTO_DEBUG
   log("Performing crypto performance and validation tests.");
   run_crypto_tests();
+#endif
+
+#ifdef LOG_COMMANDS
+  log("Booting logging regexes.");
+  boot_logging_regexes();
 #endif
 
   log("Booting MYSQL database.");

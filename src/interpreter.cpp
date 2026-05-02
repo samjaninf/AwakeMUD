@@ -3801,6 +3801,58 @@ void nanny(struct descriptor_data * d, char *arg)
 }
 
 #ifdef LOG_COMMANDS
+#include <regex.h>
+regex_t tell_regex;
+regex_t reply_regex;
+
+void boot_logging_regexes() {
+  int result_tell = regcomp(&tell_regex, "^\\s*tel?l? .*", 0);
+  int result_reply = regcomp(&reply_regex, "^\\s*re?p?l?y? .*", 0);
+  if (result_tell || result_reply) {
+      fprintf(stderr, "Could not compile regex: %d & %d\n", result_tell, result_reply);
+      exit(1);
+  }
+}
+
+// Decorates the log with location etc info.
+void write_command_log(struct char_data *ch, const char *message) {
+  // Extract location.
+  char location_buf[500];
+  if (PLR_FLAGGED(ch, PLR_MATRIX)) {
+    strlcpy(location_buf, "hitching unknown", sizeof(location_buf));
+
+    if (ch->persona && ch->persona->in_host)
+      snprintf(location_buf, sizeof(location_buf), "mtx %ld", matrix[ch->persona->in_host].vnum);
+    else if (get_ch_in_room(ch)) {
+      for (struct char_data *targ = get_ch_in_room(ch)->people; targ; targ = targ->next_in_room)
+        if (targ != ch && PLR_FLAGGED(targ, PLR_MATRIX))
+          snprintf(location_buf, sizeof(location_buf), "hitching %s", GET_CHAR_NAME(targ));
+    }
+  } else if (PLR_FLAGGED(ch, PLR_REMOTE)) {
+    struct veh_data *veh;
+    RIG_VEH(ch, veh);
+    snprintf(location_buf, sizeof(location_buf), "%ld (rig)", GET_ROOM_VNUM(get_veh_in_room(veh)));
+  } else if (ch->in_room)
+    snprintf(location_buf, sizeof(location_buf), "%ld", GET_ROOM_VNUM(ch->in_room));
+  else if (ch->in_veh)
+    snprintf(location_buf, sizeof(location_buf), "veh #%ld (@%ld)", ch->in_veh->idnum, GET_ROOM_VNUM(get_ch_in_room(ch)));
+
+  // Compose name string.
+  char name_buf[250];
+  if (ch->desc && ch->desc->original)
+    snprintf(name_buf, sizeof(name_buf), "%s (as %s)", GET_CHAR_NAME(ch->desc->original), GET_NAME(ch));
+  else
+    strlcpy(name_buf, GET_CHAR_NAME(ch), sizeof(name_buf) - 1);
+
+  // Write the command to the buffer.
+  char cmd_buf[MAX_INPUT_LENGTH * 3];
+  snprintf(cmd_buf, sizeof(cmd_buf), "COMMANDLOG: %s @ %s: %s", name_buf, location_buf, message);
+
+  // We forge a COMMANDLOG type instead of creating an actual one to prevent anyone from subscribing to it in-game.
+  // Command logs are exclusively for investigations and deliberately have friction to access; you must have server access and must parse them from the game logs.
+  log(cmd_buf);
+}
+
 void log_command(struct char_data *ch, const char *argument, const char *tcname) {
   if (!ch)
     return;
@@ -3843,42 +3895,14 @@ void log_command(struct char_data *ch, const char *argument, const char *tcname)
         return;
   }
 
-  // Extract location.
-  char location_buf[500];
-  if (PLR_FLAGGED(ch, PLR_MATRIX)) {
-    strlcpy(location_buf, "hitching unknown", sizeof(location_buf));
-
-    if (ch->persona && ch->persona->in_host)
-      snprintf(location_buf, sizeof(location_buf), "mtx %ld", matrix[ch->persona->in_host].vnum);
-    else if (get_ch_in_room(ch)) {
-      for (struct char_data *targ = get_ch_in_room(ch)->people; targ; targ = targ->next_in_room)
-        if (targ != ch && PLR_FLAGGED(targ, PLR_MATRIX))
-          snprintf(location_buf, sizeof(location_buf), "hitching %s", GET_CHAR_NAME(targ));
-    }
-  } else if (PLR_FLAGGED(ch, PLR_REMOTE)) {
-    struct veh_data *veh;
-    RIG_VEH(ch, veh);
-    snprintf(location_buf, sizeof(location_buf), "%ld (rig)", GET_ROOM_VNUM(get_veh_in_room(veh)));
-  } else if (ch->in_room)
-    snprintf(location_buf, sizeof(location_buf), "%ld", GET_ROOM_VNUM(ch->in_room));
-  else if (ch->in_veh)
-    snprintf(location_buf, sizeof(location_buf), "veh #%ld (@%ld)", ch->in_veh->idnum, GET_ROOM_VNUM(get_ch_in_room(ch)));
-
-  // Compose name string.
-  char name_buf[250];
-  if (ch->desc && ch->desc->original)
-    snprintf(name_buf, sizeof(name_buf), "%s (as %s)", GET_CHAR_NAME(ch->desc->original), GET_NAME(ch));
-  else
-    strlcpy(name_buf, GET_CHAR_NAME(ch), sizeof(name_buf) - 1);
+  // skip tell command, it is self-logging
+  if (!regexec(&tell_regex, argument, 0, NULL, 0)) {
+    return;
+  }
 
   // If it's a REPLY command, add in last-told info.
   char tell_buf[250] = { '\0' };
-  // todo: turn this into a regex comparison against '^\s?re?p?l?y?\s'
-  if (GET_LAST_TELL(ch) > 0 && *argument == 'r'
-      && (argument[1] == ' '
-          || (argument[1] == 'e' && (argument[2] == ' '
-                                     || (argument[2] == 'p' && (argument[3] == ' ' || argument[3] == 'l'))))))
-  {
+  if (GET_LAST_TELL(ch) > 0 && !regexec(&reply_regex, argument, 0, NULL, 0)) {
     for (struct descriptor_data *desc = descriptor_list; desc; desc = desc->next) {
       struct char_data *tch = desc->original ? desc->original : desc->character;
    
@@ -3891,12 +3915,10 @@ void log_command(struct char_data *ch, const char *argument, const char *tcname)
       snprintf(tell_buf, sizeof(tell_buf), "(to %ld) ", GET_LAST_TELL(ch));
   }
 
-  // Write the command to the buffer.
-  char cmd_buf[MAX_INPUT_LENGTH * 3];
-  snprintf(cmd_buf, sizeof(cmd_buf), "COMMANDLOG: %s @ %s: %s%s", name_buf, location_buf, tell_buf, argument);
+  char cmd_to_write[MAX_INPUT_LENGTH * 3];
+  snprintf(cmd_to_write, sizeof(cmd_to_write), "%s%s", tell_buf, argument);
 
-  // TODO: Save to a file based on the PC's name.
-  log(cmd_buf);
+  write_command_log(ch, cmd_to_write);
 }
 #endif
 

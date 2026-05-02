@@ -785,7 +785,7 @@ Apartment::Apartment(ApartmentComplex *complex, bf::path base_directory) :
     name = str_dup(base_info["name"].get<std::string>().c_str());
     lifestyle = base_info["lifestyle"].get<int>();
     nuyen_per_month = base_info["rent"].get<long>();
-    garage_override = base_info["garage_override"].get<bool>();
+    garage_override = base_info.value("garage_override", false);
 
     // Parse out the flags, defaulting to no flags if the field is not set.
     std::string temp_flags = base_info.value("flags", std::string("0"));

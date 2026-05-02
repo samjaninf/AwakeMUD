@@ -778,12 +778,11 @@ struct command_info cmd_info[] =
     { "jobs"       , POS_DEAD    , do_recap    , 0, 0, BLOCKS_IDLE_REWARD },
     { "junk"       , POS_RESTING , do_drop     , 0, SCMD_JUNK, BLOCKS_IDLE_REWARD },
 
-    { "kecho"      , POS_LYING   , do_new_echo , 0, SCMD_KEMOTE, BLOCKS_IDLE_REWARD },
-    { "kemote"     , POS_LYING   , do_new_echo , 0, SCMD_KEMOTE, BLOCKS_IDLE_REWARD },
     // { "kil"        , POS_FIGHTING, do_kil      , 0, 0, BLOCKS_IDLE_REWARD },
     { "kill"       , POS_FIGHTING, do_kill     , 0, SCMD_KILL, BLOCKS_IDLE_REWARD },
     { "keep"       , POS_LYING   , do_keep     , 0, 0, BLOCKS_IDLE_REWARD },
     { "keepalive"  , POS_DEAD    , do_keepalive, 0, 0, ALLOWS_IDLE_REWARD },
+    { "kemote"     , POS_LYING   , do_new_echo , 0, SCMD_KEMOTE, BLOCKS_IDLE_REWARD },
     { "kick"       , POS_STANDING, do_kick     , 0, 0, BLOCKS_IDLE_REWARD },
     { "knock"      , POS_STANDING, do_gen_door , 0, SCMD_KNOCK, BLOCKS_IDLE_REWARD },
 
@@ -4151,6 +4150,7 @@ int fix_common_command_fuckups(const char *arg, struct command_info *cmd_info) {
   COMMAND_ALIAS("snipe", "shoot");
   COMMAND_ALIAS("penalty", "penalties");
   COMMAND_ALIAS("whois", "finger");
+  COMMAND_ALIAS("kecho", "kemote");
 
   // Some otaku conveniences because human language is weird
   COMMAND_ALIAS("form", "forms");

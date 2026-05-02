@@ -1896,7 +1896,9 @@ ACMD(do_pgset) {
 
     FAILURE_CASE_PRINTF(!GET_PGROUP_MEMBER_DATA(target) || !GET_PGROUP(target) || GET_PGROUP(target) != pgroup,
                         "%s is not a member of %s.", GET_CHAR_NAME(target), pgroup->get_name());
-    
+
+    // todo: remove leader bit from everyone in the group
+
     // At this point, they're a member of the group. Give them the leader bit.
     GET_PGROUP_MEMBER_DATA(target)->rank = MAX_PGROUP_RANK;
     GET_PGROUP_MEMBER_DATA(target)->privileges.SetBit(PRIV_LEADER);

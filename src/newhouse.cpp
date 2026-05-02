@@ -1447,8 +1447,11 @@ bool Apartment::create_or_extend_lease(struct char_data *ch) {
 
     // new office lease? reset the zone
     if (is_office() && !rooms.empty()) {
-      mudlog_vfprintf(ch, LOG_SYSLOG, "Resetting office due to new lease potentially wiping out zoneloaded contents.");
-      reset_zone(get_zone_from_vnum(rooms.at(0)->get_vnum())->number, 0, false);
+      rnum_t rnum = real_zone(get_zone_from_vnum(rooms.at(0)->get_vnum())->number);
+      if (rnum >= 0) {
+        mudlog_vfprintf(ch, LOG_SYSLOG, "Resetting office's zone due to new lease potentially wiping out zoneloaded contents.");
+        reset_zone(rnum, 0, false);
+      }
     }
   } 
   // Arrears extension requires setting a new lease timeout.

@@ -165,9 +165,10 @@ void hcontrol_display_house_by_number(struct char_data * ch, vnum_t house_number
         if (room->get_vnum() == house_number) {
         {
           const char *owner_name = apartment->get_owner_name__returns_new();
-          send_to_char(ch, "%s (%ld) is owned by ^c%s^n (^c%ld^n).\r\n",
+          send_to_char(ch, "%s (%ld, %s) is owned by ^c%s^n (^c%ld^n).\r\n",
                        apartment->get_full_name(),
                        apartment->get_root_vnum(),
+                       apartment->is_garage_lifestyle() ? (apartment->get_garage_override() ? "forced garage" : "majority garage") : "standard apt",
                        owner_name,
                        apartment->get_owner_id());
           delete [] owner_name;

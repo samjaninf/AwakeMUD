@@ -969,7 +969,7 @@ ACMD(do_new_echo) {
     {
       // Staff can always see these, non-adept questors can see them in the NERPcorpolis
       if ((GET_TRADITION(viewer) == TRAD_ADEPT && GET_POWER(viewer, ADEPT_KINESICS)) || access_level(viewer, LVL_BUILDER) ||
-          (VNUM_IS_NERPCORPOLIS(GET_ROOM_VNUM(ch->in_room) && PRF_FLAGGED(viewer, PRF_QUESTOR)))) {
+          (VNUM_IS_NERPCORPOLIS(GET_ROOM_VNUM(ch->in_room)) && PRF_FLAGGED(viewer, PRF_QUESTOR))) {
         send_echo_to_char(ch, viewer, (const char *) emote_buf, TRUE, subcmd, FALSE);
       }
     }
